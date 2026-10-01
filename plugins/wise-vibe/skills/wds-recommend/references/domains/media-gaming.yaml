@@ -1,0 +1,73 @@
+id: media-gaming
+title: "미디어·게임·엔터 (Media / Gaming)"
+status: stable
+ksic_section: R
+ksic_divisions: [90, 91, 92]
+classification:
+  isic: R
+  nace: R
+  naics: "71"
+summary: >
+  게임/스트리밍/엔터. 저지연 실시간 멀티플레이(전용서버·UDP/QUIC) + 매치메이킹 + CDN 이 핵심.
+  2024-03 확률형 아이템 확률공개 의무(해외 퍼블리셔 포함) → 확률 audit 파이프라인 필수.
+  (게임 개발/배급은 J58/J63 으로 이중분류 잦음)
+
+keywords:
+  - 게임 / game / gaming / 멀티플레이 / multiplayer
+  - 스트리밍 / streaming / 미디어 / media / 엔터
+  - 확률형아이템 / gacha / 매치메이킹 / matchmaking
+
+recommended_profiles:
+  - { id: go-gin,         why: "권위서버·매치메이킹·세션 (동시성)" }
+  - { id: rust-axum,      why: "초저지연 권위 게임서버, 안티치트 검증" }
+  - { id: node-next-nest, why: "운영/스토어/계정 포털, 실시간 채팅" }
+
+stack_overrides:
+  gameservers: "전용서버(no hypervisor, 코어주파수∝동접), Go/Rust/C++ 권위서버"
+  networking:  "UDP(저지연+커스텀신뢰성), QUIC(보안 멀티플렉싱), TCP(채팅/거래), DTLS"
+  orchestration: "Agones/OpenMatch(k8s 게임서버), Colyseus(TS)"
+  client:      "Unity/Unreal, 스트리밍 HLS/DASH + CDN"
+  anticheat:   "서버권위 검증, 서버측 rate-limit, 이상탐지, JWT/OAuth+TLS"
+
+korea_regulations:
+  - { name: "게임산업법 확률형아이템 확률공개", since: "2024-03-22", impact: "유료 가챠 확률 표시, 천장/합성/강화 포함, 해외 퍼블리셔 적용, 확률 audit 추적" }
+  - { name: "등급분류(GRAC, IARC)", since: "2025 기준 갱신", impact: "배포 전 등급 + 빌드/스토어별 등급 메타데이터, 연령 게이트" }
+  - { name: "청소년보호법", impact: "연령확인 계정, 미성년 결제/이용시간 제한" }
+  - { name: "전자금융거래법(PG)", impact: "PG 등록, 환불/차지백 플로우, 결제 격리" }
+  - { name: "저작권법", impact: "에셋/음악/스트리밍 라이선스 추적" }
+
+global_compliance:
+  - "연령등급 IARC: ESRB/PEGI/USK/ClassInd (단일 설문→다지역)"
+  - "루트박스 확률공개 글로벌 확산(EU/중국)"
+  - "DSA 콘텐츠 모더레이션(EU), PCI-DSS(카드)"
+
+data_classes:
+  - { name: "결제/거래 데이터", level: "규제대상", note: "PG, 환불" }
+  - { name: "계정/인증 정보", level: "민감", note: "OAuth/JWT" }
+  - { name: "플레이 데이터(텔레메트리)", level: "내부", note: "매치기록·치트조사" }
+  - { name: "미성년자 결제·이용시간", level: "규제대상", note: "청소년보호" }
+  - { name: "확률 구성 데이터", level: "규제대상", note: "확률공개 audit 대상" }
+
+infra_patterns:
+  - "저지연 실시간 리전 배포(Americas/EU/APAC) RTT/지터 최소화"
+  - "전용 게임서버(베어메탈/격리), 세션 어피니티 라우팅"
+  - "안티치트 서버권위 계층, 매치메이킹 서비스"
+  - "스트리밍 CDN(HLS/DASH)"
+
+dev_env_special:
+  - "부하/지연/soak 테스트(동접 스트레스, 지터 시뮬)"
+  - "확률공개 audit 하네스 — 표시확률 == config/RNG 분포(드롭로그 통계검정)"
+  - "치트조사용 결정적 리플레이, IARC 설문 릴리스 게이트 메타데이터"
+  - "결제 샌드박스(PG test mode)"
+
+testing_additions:
+  - "표시 확률 == 실제 RNG 드롭 분포(통계 일치)"
+  - "동접 N명 권위서버 지연/지터 한계"
+  - "미성년 계정 결제/이용시간 제한 적용"
+
+references:
+  - "https://www.korea.kr/multi/visualNewsView.do?newsId=148924522 (확률형아이템 의무화)"
+  - "https://www.lawtimes.co.kr/LawFirm-NewsLetter/209870 (게임산업법 개정)"
+  - "https://www.esrb.org/blog/republic-of-koreas-game-rating-and-administration-committee-grac-becomes-newest-participant-in-iarc-rating-system/"
+  - "https://medevel.com/game-server-2025/ (Rust/Go/C++ 게임서버)"
+  - "https://techbuzzonline.com/game-server-architecture-guide/"

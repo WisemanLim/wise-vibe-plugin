@@ -1,0 +1,18 @@
+# 데이터소스는 env 주입: SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD (.env.local | .env.prod)
+spring:
+  application:
+    name: "{{PROJECT_NAME}}"
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+server:
+  port: 8080
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+app:
+  env: ${APP_ENV:local}
+  db-engine: ${DB_ENGINE:sqlite}

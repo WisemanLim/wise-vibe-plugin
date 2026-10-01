@@ -1,0 +1,8 @@
+# {{PROJECT_NAME}} — prod 모드: runtime 스테이지(alpine) + DB_ENGINE RDBMS ({{DB_ENGINE}})
+services:
+  api:
+    env_file: [".env.prod"]
+    restart: unless-stopped
+{{DB_DEPENDS_ON}}
+{{DB_SERVICE}}
+{{DB_VOLUMES}}

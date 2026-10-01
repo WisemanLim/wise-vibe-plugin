@@ -1,0 +1,13 @@
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: test -f .env.prod || cp .env.example .env.prod
+      - run: make preflight
+      - run: make test
+      - run: docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod build

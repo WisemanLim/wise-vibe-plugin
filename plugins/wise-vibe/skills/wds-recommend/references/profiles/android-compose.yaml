@@ -1,0 +1,91 @@
+id: android-compose
+title: "Android Native (Kotlin + Jetpack Compose)"
+kind: mobile
+status: stable
+summary: >
+  Kotlin + Jetpack Compose 네이티브 Android. Android Studio + Emulator, Gradle(KTS),
+  Coroutines/Flow, Room 온디바이스 저장. OS 최신 API·네이티브 성능이 필요할 때.
+when_to_use:
+  - "Android 전용 또는 Android 우선 + 최신 API 즉시 채택"
+  - "순수 네이티브 성능·시스템 통합(위젯/백그라운드/센서 등)"
+  - "Material You(Material 3) 정합성"
+avoid_when:
+  - "iOS·Android 동시 출시·단일 코드베이스 → flutter-app / react-native-app"
+  - "팀 Kotlin 숙련도 낮고 일정 촉박"
+
+platforms: [android]
+
+languages:
+  primary: kotlin
+  also: []
+
+package_managers:
+  default: Gradle
+  allowed: [Gradle]
+  notes: "Gradle (Kotlin DSL, build.gradle.kts) + Version Catalog(libs.versions.toml). Gradle Wrapper 커밋."
+
+layers:
+  frontend:
+    framework: "Jetpack Compose (Material 3)"
+    state: "ViewModel + StateFlow (MVVM/MVI)"
+    navigation: "Navigation Compose"
+    test: "JUnit + Compose UI test + Espresso"
+  backend: null
+  database:
+    local_store: "Room (SQLite) 또는 DataStore"
+    remote: "Retrofit + OkHttp + Coroutines (페어링 백엔드: 별도 서버 프로파일)"
+  ops:
+    ci: "GitHub Actions (ubuntu 러너 가능) + Fastlane (supply)"
+    signing: "keystore (upload key) + Play App Signing. 시크릿은 CI 시크릿/Vault 주입"
+    deploy: "Fastlane supply → Play(internal/production track)"
+    quality: "ktlint + detekt + Android Lint"
+  app: "Android (Kotlin + Compose)"
+
+run_methods:
+  simulator: "Android Emulator (Android Studio ▶ Run)"
+  ios: "N/A (Android 전용)"
+  android: "./gradlew installDebug 후 에뮬레이터 실행"
+  release: "./gradlew bundleRelease (.aab) / assembleRelease (.apk)"
+
+environments:                    # 모드 2종 = 빌드 플레이버 / two modes = build flavors
+  local: { flavor: local,     api_base: "http://10.0.2.2:8000",   signing: debug,   notes: "에뮬레이터(호스트=10.0.2.2), 디버그 서명" }
+  prod:  { flavor: prod,    api_base: "https://api.example",     signing: release, notes: "Play 프로덕션 (prod flavor)" }
+
+scaffold:
+  tree:
+    - "app/"
+    - "app/src/main/java/"
+    - "app/src/main/res/"
+    - "app/src/test/"
+    - "app/src/androidTest/"
+    - "gradle/"
+    - "fastlane/"
+    - ".github/workflows/"
+  files:
+    - "settings.gradle.kts"
+    - "build.gradle.kts"
+    - "app/build.gradle.kts"
+    - "gradle/libs.versions.toml"
+    - "app/src/main/java/MainActivity.kt"
+    - "Makefile"
+    - "fastlane/Fastfile"
+    - "keystore.properties"
+    - ".github/workflows/ci.yml"
+
+testing:
+  framework: "JUnit (unit) + Compose UI test / Espresso (instrumented)"
+  dir: "test/"                                     # 시험표준 증빙(scenario/result/logs). app/src/test 코드테스트와 별개
+  dev_env: "test/dev-env/"                         # JDK/SDK/에뮬레이터 확인 + 디버그 빌드·부팅 성공
+  impl: "test/impl/<Nth>/"
+  cycle: "시나리오→빌드·실행→오류시 수정·재시험→결과작성 / scenario→build&run→fix&retest→result"
+
+makefile_targets:                 # 공통 진입점 — 모든 환경 동일 네이밍 (템플릿 Makefile 이 단일 기준)
+  run: "setup(ios/android) | local-all(시뮬레이터/에뮬레이터 실행) | local-stop"
+  build: "local-build | prod-build  (xcconfig / flavor / dart-define / eas profile)"
+  common: "test | deploy | help"
+  test: "./gradlew testDebugUnitTest connectedDebugAndroidTest"
+  deploy: "fastlane supply (Play internal/production)"
+
+references:
+  - "원본 §4 App(네이티브 Android)"
+  - "PRD-1-Mobile §2 Android(Kotlin + Jetpack Compose, Android Studio, Emulator)"

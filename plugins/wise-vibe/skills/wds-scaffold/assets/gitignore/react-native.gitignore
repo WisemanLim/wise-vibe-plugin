@@ -1,0 +1,30 @@
+# ===== React Native / Expo =====
+## JS (node.gitignore 도 함께 병합 / merge node.gitignore too)
+node_modules/
+## Metro / RN
+.metro-health-check*
+.metro-cache/
+.expo/
+.expo-shared/
+dist/
+web-build/
+## EAS / native build artifacts
+*.ipa
+*.apk
+*.aab
+## iOS (RN bare)
+ios/Pods/
+ios/build/
+ios/.xcode.env.local
+## Android (RN bare)
+android/.gradle/
+android/app/build/
+android/local.properties
+## 서명/시크릿 — 절대 커밋 금지 / never commit signing material
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+AuthKey_*.p8
+google-services.json
+GoogleService-Info.plist

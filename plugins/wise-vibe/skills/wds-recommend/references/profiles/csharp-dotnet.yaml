@@ -1,0 +1,93 @@
+id: csharp-dotnet
+title: "C# (.NET / ASP.NET Core)"
+status: stable
+summary: >
+  Windows/크로스플랫폼 엔터프라이즈 API. ASP.NET Core 8 Web API + EF Core ORM.
+  레거시 .NET Framework 마이그레이션 및 ERP·MES·그룹웨어 백엔드에 적합.
+when_to_use:
+  - "Windows 환경 또는 .NET 생태계가 기존 인프라일 때"
+  - "엔터프라이즈 ERP·MES·그룹웨어 백엔드"
+  - "레거시 .NET Framework → .NET 8 마이그레이션"
+  - "팀이 C#에 익숙하고 풍부한 NuGet 생태계가 필요할 때"
+avoid_when:
+  - "ML/데이터 파이프라인이 핵심 → python-fastapi"
+  - "초고동시성·저지연 코어 → go-gin / rust-axum"
+  - "프론트-백엔드 언어 통일이 목표 → node-next-nest"
+
+languages:
+  primary: csharp
+  also: [dotnet]
+
+package_managers:
+  default: nuget
+  allowed: [nuget]
+  notes: "dotnet CLI (dotnet add package). 빌드는 Makefile 로 추상화."
+
+layers:
+  frontend: null
+  backend:
+    framework: "ASP.NET Core 8 Web API"
+    orm: "Entity Framework Core 8 (Npgsql)"
+    rpc: "gRPC (optional)"
+  database:
+    default: postgres
+    local: sqlite
+    prod_options: [postgres, mysql, mariadb, sqlite]           # wds-scaffold --db
+    cache: "redis (선택: --extras redis)"
+  ops:
+    ci: "GitHub Actions (or GitLab CI)"
+    container: "Docker (multi-stage) + Docker Compose"
+    deploy: "docker compose prod 모드 (make deploy) — K8s/Helm/Argo CD 는 확장 옵션"
+    quality: "dotnet-format + xUnit + SonarQube"
+  app: null
+
+run_methods:                     # docker compose 전용 (호스트 프로세스 매니저 없음)
+  container:
+    local: "make local-all   # docker-compose.yml + docker-compose.local.yml + .env.local (dev 스테이지)"
+    prod: "make prod-all     # docker-compose.yml + docker-compose.prod.yml + .env.prod (runtime 스테이지)"
+
+environments:                    # 모드 2종 / two modes
+  local: { db: sqlite,   compose: "docker-compose.yml + docker-compose.local.yml", notes: "dev 스테이지 · 소스 바인드 · SQLite 고정" }
+  prod:  { db: postgres, db_options: [postgres, mysql, mariadb, sqlite], compose: "docker-compose.yml + docker-compose.prod.yml", notes: "runtime 스테이지 · --db 로 RDBMS 선택 (기본 postgres)" }
+
+scaffold:                         # 정적 템플릿: wds-scaffold/assets/scaffold/csharp-dotnet/
+  template: "csharp-dotnet"
+  tree:
+    - ".github/workflows/"
+    - "src/Api/"
+    - "test/Api.Tests/"
+    - "test/dev-env/"
+  files:
+    - "Dockerfile"
+    - "docker-compose.local.yml"
+    - "docker-compose.prod.yml"
+    - "docker-compose.yml"
+    - "src/Api/Api.csproj"
+    - "src/Api/Program.cs"
+    - "src/Api/appsettings.json"
+    - "test/Api.Tests/Api.Tests.csproj"
+    - "test/Api.Tests/HealthTests.cs"
+    - "Makefile"
+    - ".env.local"
+    - ".env.prod"
+    - ".env.example"
+    - ".github/workflows/ci.yml"
+    - ".dockerignore"
+    - "README.md"
+    - "README.en.md"
+    - "test/dev-env/scenario.md"
+
+testing:
+  framework: "xUnit (unit) + WebApplicationFactory (통합)"
+  dir: "test/"
+  dev_env: "test/dev-env/"
+  impl: "test/impl/<Nth>/"
+  cycle: "시나리오→진행→오류시 수정·재시험→결과작성 / scenario→run→fix&retest→result"
+
+makefile_targets:                 # 생성 Makefile (wds-scaffold assets/common/server.mk) 이 단일 기준
+  mode_family: "<mode>-all | -build | -logs | -stop | -restart | -ps  (mode = local | prod)"
+  db: "db-ping | db-shell | db-migrate | db-seed | db-reset | db-fresh  [ENV=local|prod]  (reset/fresh 는 local 전용)"
+  common: "preflight | test | shell | deploy | help"
+
+references:
+  - "Microsoft .NET 8 LTS, ASP.NET Core Web API, EF Core 8 (Npgsql)"

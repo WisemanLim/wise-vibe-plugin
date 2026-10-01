@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Api</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- DB 프로바이더: local=SQLite, prod={{DB_ENGINE}} (DbContext 는 implement 단계에서 추가) -->
+{{DB_DEPS}}
+  </ItemGroup>
+</Project>

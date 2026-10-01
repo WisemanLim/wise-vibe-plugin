@@ -1,0 +1,15 @@
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request:
+jobs:
+  build:
+    runs-on: macos-latest        # iOS 빌드 위해 macOS
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable }
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build apk --debug    # 미서명 디버그 빌드 검증

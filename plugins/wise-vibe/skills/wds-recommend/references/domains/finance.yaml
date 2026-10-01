@@ -1,0 +1,85 @@
+id: finance
+title: "금융·보험 (Fintech / Insurance)"
+status: stable
+ksic_section: K
+ksic_divisions: [64, 65, 66]
+classification:
+  isic: K
+  nace: K
+  naics: "52"
+summary: >
+  결제·거래 원장의 정합성·멱등성·감사가능성이 성능보다 우선. 핀테크/은행/보험 코어.
+  2025 전자금융감독규정 개정으로 망분리는 '위험기반 조건부'로 완화 — 비핵심·무(無)개인신용정보
+  워크로드는 클라우드/SaaS 허용, 가명정보는 R&D 사용 가능.
+
+keywords:
+  - 금융 / finance / fintech / banking
+  - 결제 / payment / PG / 간편결제
+  - 보험 / insurance / 정산 / settlement
+  - 원장 / ledger / 마이데이터 / mydata
+  - 증권 / 자산관리 / 송금 / 거래
+
+recommended_profiles:
+  - { id: go-gin,         why: "고처리량·저지연 결제/거래 코어, 멱등·정합성" }
+  - { id: rust-axum,      why: "민감 데이터·키 처리 메모리안전 서비스" }
+  - { id: python-fastapi, why: "리스크/사기탐지 ML, 정산 분석 API" }
+  - { id: node-next-nest, why: "고객 포털/어드민/BFF (인증·권한 분리)" }
+
+stack_overrides:
+  database:   "PostgreSQL (원장=ACID, 이벤트소싱 + Transactional Outbox)"
+  messaging:  "Apache Kafka (이벤트 스트리밍), Redis/Redis Streams (멱등키·큐)"
+  security:   "HSM + KMS 키 수명주기, crypto-agility(PQC 대비), MFA(CDE 전구간)"
+  observability: "append-only 감사로그 + SIEM, 실시간 사기탐지(RBA/SCA)"
+  legacy_note: "국내 코어뱅킹/보험 incumbent 는 Java + Spring Boot 3.x 우세"
+
+korea_regulations:
+  - { name: "전자금융거래법", impact: "안전성·무결성 의무, 무권한거래 책임 → 인증·로깅·책임추적 설계" }
+  - { name: "전자금융감독규정", since: "2025-02-05", impact: "망분리 위험기반 예외, CSP 간소평가, SaaS 별도기준, 가명정보 R&D 허용" }
+  - { name: "망분리(FSC 로드맵)", impact: "비핵심·무개인신용정보 워크로드는 클라우드 IDE/SaaS 조건부 허용" }
+  - { name: "신용정보법", impact: "개인신용정보 가명/익명 처리, 비프로드 반출 통제" }
+  - { name: "개인정보보호법(PIPA)", impact: "암호화·접근통제·유출통지 기본선" }
+  - { name: "ISMS-P", impact: "접근로그·변경관리·암호화 증적, 위반 시 인증취소(2025 강화)" }
+  - { name: "마이데이터(MyData 2.0)", since: "2025-06-19", impact: "표준 전송 API + 동의원장 + 강인증/암호화" }
+  - { name: "재해복구센터(DR)", since: "2026 단계적", impact: "DR/BCP 인프라 아키텍처 필수" }
+
+global_compliance:
+  - "PCI-DSS 4.0.1 (2025-03-31 모든 best-practice 의무, CDE 전구간 MFA)"
+  - "SOC 2 Type II"
+  - "PSD2 SCA/RBA (해외/EU 연계)"
+  - "ISO 20022 (결제 메시지), DORA/PQC (crypto-agility)"
+
+data_classes:
+  - { name: "개인신용정보", level: "규제대상", note: "신용정보법 최고민감, 비프로드 금지" }
+  - { name: "결제/카드데이터(CHD/SAD)", level: "규제대상", note: "PCI-DSS scope, 토큰화로 범위 축소" }
+  - { name: "PII(개인정보)", level: "민감", note: "PIPA" }
+  - { name: "가명정보/익명정보", level: "제한", note: "R&D 사용 가능(2025 개정)" }
+  - { name: "거래원장/감사로그", level: "무결성", note: "append-only, 변조방지" }
+  - { name: "인증·키 정보", level: "규제대상", note: "HSM/KMS 격리" }
+
+infra_patterns:
+  - "CDE 네트워크 분리(VPC/네트워크정책/서비스메시), 위험기반 망분리"
+  - "멱등키(Idempotency-Key) + 정산 대사(reconciliation) 잡"
+  - "Transactional Outbox 로 exactly-once 이벤트 전달"
+  - "HSM/KMS 단일 제어평면, 하이브리드 PQC 대비"
+  - "실시간 사기탐지/거래차단(RBA·SCA), DR/BCP"
+
+dev_env_special:
+  - "비프로드 데이터 마스킹/가명처리 — 개인신용정보 반입 금지"
+  - "결제/KYC 샌드박스 + 합성 규제 테스트데이터(가짜 신용/결제)"
+  - "마이데이터 전송 API 적합성(conformance) 샌드박스"
+  - "코드→배포 불변 감사추적 (ISMS-P 증적)"
+  - "세분화된 망분리 dev 제약(2025 완화 반영: 클라우드 IDE 조건부)"
+
+testing_additions:
+  - "멱등 결제: 중복 요청 1건만 반영(UNIQUE/Idempotency-Key)"
+  - "정산 대사: 외부 레일 vs 원장 금액 일치"
+  - "PAYMENT_FAILED 보상 트랜잭션으로 재고/잔액 복원"
+  - "CDE 접근 MFA 강제, 카드데이터 토큰화 검증"
+
+references:
+  - "https://www.fsc.go.kr/no010101/82885 (전자금융감독규정 개정)"
+  - "https://www.kimchang.com/ko/insights/detail.kc?sch_section=4&idx=25231"
+  - "https://www.fsc.go.kr/no010101/84780 (망분리 개선)"
+  - "https://www.pcisecuritystandards.org/ (PCI-DSS 4.0.1)"
+  - "https://medium.com/@lakshitagangola123/event-driven-spring-boot-the-2025-blueprint-kafka-outbox-idempotency-fdc629bb5525"
+  - "https://www.cryptomathic.com/blog/2025-compliance-guide-dora-pci-dss-4.0-pqc-readiness"

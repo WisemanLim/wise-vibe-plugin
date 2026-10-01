@@ -1,0 +1,14 @@
+# {{PROJECT_NAME}} — local 모드: SQLite + dev 스테이지(dotnet watch) + 소스 바인드
+services:
+  api:
+    build: { target: dev }
+    env_file: [".env.local"]
+    volumes:
+      - ./:/src
+      - nuget:/root/.nuget/packages
+      - appdata:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health >/dev/null || exit 1"]
+      start_period: 120s
+volumes:
+  nuget:

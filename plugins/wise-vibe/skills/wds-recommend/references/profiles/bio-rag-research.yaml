@@ -1,0 +1,135 @@
+id: bio-rag-research
+title: "Bio/Healthcare RAG 연구 플랫폼"
+status: preview
+summary: >
+  바이오/헬스케어/식품-제조 연구조직용 RAG 플랫폼. 역할 분리형 스택 — Next 포털 + NestJS BFF
+  + FastAPI 분석 API + LangChain/LlamaIndex RAG. 보안·출처·재현성·감사 가능성을 기본 전제로 한다.
+extends: [node-next-nest, python-fastapi]
+when_to_use:
+  - "내부 문서/논문/SOP/프로토콜 기반 RAG 검색 서비스"
+  - "유전체·마이크로바이옴·임상·공정 데이터 분석 + LLM"
+  - "규제(개인정보/데이터무결성/재현성) 추적이 필요한 연구조직"
+avoid_when:
+  - "단순 웹/API (규제·RAG 불필요) → node-next-nest 또는 python-fastapi"
+
+languages:
+  primary: python
+  also: [node, typescript, go, rust]
+
+package_managers:
+  default: uv
+  allowed: [uv, pip, pnpm, npm]
+  notes: "분석/RAG=uv, 포털/BFF=pnpm. 역할별로 분리."
+
+layers:
+  frontend:
+    framework: "Next.js (연구 포털, RAG UI, 권한 기반 화면)"
+    ui: "React + TypeScript + Tailwind + Storybook"
+  backend:
+    bff: "NestJS (인증/권한/감사 로직 분리)"
+    analysis_api: "FastAPI + uv + uvicorn (통계/ML/생체신호)"
+    workers: "Go 또는 Rust (대량 문서 처리, 재색인 워커, 큐 소비자)"
+  database:
+    default: postgres
+    local: sqlite
+    prod_options: [postgres]           # wds-scaffold --db
+    cache: "redis (선택: --extras redis)"
+    vector: "PGVector 또는 Chroma"
+    graph: "Neo4j (GraphRAG)"
+    object: "S3 또는 MinIO (원문/파생/스냅샷)"
+  rag:
+    orchestration: "LangChain 또는 LlamaIndex + LangGraph/PydanticAI"
+    retrieval: "BM25 + 벡터 하이브리드 + 메타데이터 필터 + 재랭킹"
+    eval: "Langfuse + Ragas (groundedness/recall/MRR)"
+  ops:
+    ci: "GitHub Actions (or GitLab CI) + 보안 스캔"
+    container: "Docker + Docker Compose"
+    deploy: "docker compose prod 모드 (make deploy) — K8s/Helm/Argo CD 는 확장 옵션"
+    secrets: "Vault 또는 클라우드 Secret Manager"
+    observability: "OpenTelemetry + Prometheus + Grafana + Langfuse"
+  app: "Flutter/React Native (현장 점검) · Tauri (장비 UI), optional"
+
+run_methods:                     # docker compose 전용 (호스트 프로세스 매니저 없음)
+  container:
+    local: "make local-all   # docker-compose.yml + docker-compose.local.yml + .env.local (dev 스테이지)"
+    prod: "make prod-all     # docker-compose.yml + docker-compose.prod.yml + .env.prod (runtime 스테이지)"
+
+environments:                    # 모드 2종 / two modes
+  local: { db: sqlite,   compose: "docker-compose.yml + docker-compose.local.yml", notes: "dev 스테이지 · 소스 바인드 · SQLite 고정" }
+  prod:  { db: postgres, db_options: [postgres], compose: "docker-compose.yml + docker-compose.prod.yml", notes: "runtime 스테이지 · --db 로 RDBMS 선택 (기본 postgres)" }
+
+scaffold:                         # 정적 템플릿: wds-scaffold/assets/scaffold/python-fastapi/
+  template: "python-fastapi"
+  tree:
+    - ".github/workflows/"
+    - "app/"
+    - "app/core/"
+    - "migrations/"
+    - "migrations/versions/"
+    - "test/"
+    - "test/dev-env/"
+  files:
+    - "Dockerfile"
+    - "alembic.ini"
+    - "app/__init__.py"
+    - "app/core/__init__.py"
+    - "app/core/config.py"
+    - "app/db.py"
+    - "app/main.py"
+    - "app/seed.py"
+    - "docker-compose.local.yml"
+    - "docker-compose.prod.yml"
+    - "docker-compose.yml"
+    - "migrations/env.py"
+    - "migrations/script.py.mako"
+    - "migrations/versions/.gitkeep"
+    - "pyproject.toml"
+    - "test/test_health.py"
+    - "Makefile"
+    - ".env.local"
+    - ".env.prod"
+    - ".env.example"
+    - ".github/workflows/ci.yml"
+    - ".dockerignore"
+    - "README.md"
+    - "README.en.md"
+    - "test/dev-env/scenario.md"
+
+security_standards:
+  data_classification: "공개/내부/민감/규제대상(PHI·유전정보) 4단계. 업로드 기본값=민감."
+  access_control: "OIDC SSO + RBAC/ABAC. 질의 시점 ACL 필터 후 검색."
+  deidentification: "전처리 파이프라인에 마스킹 단계 기본 포함."
+  audit: "인덱싱/조회/다운로드 감사로그 → Audit DB + SIEM."
+  provenance: "모든 응답에 출처·버전·인덱싱시점·검증상태 병기."
+  reproducibility: "chunker/embedding 모델/prompt 버전 고정·기록."
+  high_risk: "고위험 질의는 human-in-the-loop 승인 큐."
+
+index_metadata_min_fields:
+  - document_id
+  - source_uri
+  - domain
+  - project_id
+  - sensitivity
+  - owner
+  - version
+  - chunk_id
+  - section_path
+  - approval_state
+  - retention_policy
+  - indexed_at
+
+testing:
+  framework: "pnpm -r test (Vitest) + uv run pytest + Ragas (RAG groundedness/recall/MRR)"
+  dir: "test/"                                      # test-runner 표준 / convention
+  dev_env: "test/dev-env/"                          # 표준 환경 검증 1회 / env verification, once
+  impl: "test/impl/<Nth>/"                          # 구현마다 / per implementation iteration
+  cycle: "시나리오→진행→오류시 수정·재시험→결과작성 / scenario→run→fix&retest→result"
+  rag_eval: "정답 질의셋 기반 recall/MRR/groundedness 케이스 포함 / eval set with grounded answers"
+
+makefile_targets:                 # 생성 Makefile (wds-scaffold assets/common/server.mk) 이 단일 기준
+  mode_family: "<mode>-all | -build | -logs | -stop | -restart | -ps  (mode = local | prod)"
+  db: "db-ping | db-shell | db-migrate | db-seed | db-reset | db-fresh  [ENV=local|prod]  (reset/fresh 는 local 전용)"
+  common: "preflight | test | shell | deploy | help"
+
+references:
+  - "원본 §3(도메인 표준), §4(RAG 아키텍처/보안/인덱싱/에이전틱 워크플로우/기술스택표준)"

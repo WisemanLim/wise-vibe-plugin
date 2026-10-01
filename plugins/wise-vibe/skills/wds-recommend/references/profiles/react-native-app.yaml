@@ -1,0 +1,90 @@
+id: react-native-app
+title: "React Native (Expo, TypeScript)"
+kind: mobile
+status: stable
+summary: >
+  React Native + Expo + TypeScript 단일 코드베이스로 iOS·Android. React 생태계·JS 팀 자산 재활용.
+  Zustand/Redux 상태, TanStack Query API, expo-sqlite 온디바이스 저장.
+when_to_use:
+  - "기존 React/TypeScript 팀 자산·인력 재활용"
+  - "웹(Next.js)과 컴포넌트/로직 공유"
+  - "OTA(Expo Updates) 로 빠른 배포 반복"
+avoid_when:
+  - "픽셀 단위 커스텀 UI·고성능 그래픽 → flutter-app"
+  - "OS 최신 API 즉시·순수 네이티브 성능 → ios-swiftui / android-compose"
+
+platforms: [ios, android]
+
+languages:
+  primary: node
+  also: [typescript]
+
+package_managers:
+  default: pnpm
+  allowed: [pnpm, npm]
+  notes: "Expo SDK 버전 핀. pnpm 권장(웹과 monorepo 공유 시 pnpm workspaces). yarn/bun 승인제."
+
+layers:
+  frontend:
+    framework: "React Native (Expo, expo-router)"
+    ui: "React + TypeScript (NativeWind / Tamagui)"
+    state: "Zustand (소형) / Redux Toolkit (대형)"
+    data: "TanStack Query"
+    test: "Jest + React Native Testing Library + Detox/Maestro (e2e)"
+  backend: null
+  database:
+    local_store: "expo-sqlite / WatermelonDB / MMKV"
+    remote: "REST/GraphQL via fetch + TanStack Query (페어링 백엔드: 별도 서버 프로파일)"
+  ops:
+    ci: "GitHub Actions (iOS 빌드는 macOS 러너) + EAS Build / Fastlane"
+    signing: "iOS: match / ASC API key · Android: keystore(Play). EAS credentials 가능"
+    deploy: "EAS Submit 또는 Fastlane → TestFlight / Play(internal). Expo Updates(OTA)"
+    quality: "ESLint + Prettier + tsc"
+  app: "React Native (iOS + Android)"
+
+run_methods:
+  simulator: "pnpm expo start            # Metro + dev client"
+  ios: "pnpm expo run:ios                # Xcode iOS Simulator"
+  android: "pnpm expo run:android        # Android Emulator"
+  release: "eas build -p ios / -p android (또는 fastlane)"
+
+environments:                    # 모드 2종 = 빌드 플레이버 / two modes = build flavors
+  local: { flavor: development, api_base: "http://localhost:8000",  signing: debug,   notes: "Expo Go/dev client, 디버그" }
+  prod:  { flavor: production,   api_base: "https://api.example",     signing: release, notes: "App Store / Play(EAS production)" }
+
+scaffold:
+  tree:
+    - "app/"
+    - "src/"
+    - "src/features/"
+    - "src/core/"
+    - "__tests__/"
+    - "fastlane/"
+    - ".github/workflows/"
+  files:
+    - "package.json"
+    - "app.json"
+    - "tsconfig.json"
+    - "src/core/env.ts"
+    - "Makefile"
+    - "fastlane/Fastfile"
+    - ".env.local"
+    - ".github/workflows/ci.yml"
+
+testing:
+  framework: "Jest + RN Testing Library (unit) + Detox/Maestro (e2e)"
+  dir: "test/"                                     # 시험표준 증빙. __tests__/ 코드테스트와 별개로 공존
+  dev_env: "test/dev-env/"                         # Node/Expo CLI 확인 + 시뮬레이터 부팅 + dev 빌드 성공
+  impl: "test/impl/<Nth>/"
+  cycle: "시나리오→빌드·실행→오류시 수정·재시험→결과작성 / scenario→build&run→fix&retest→result"
+
+makefile_targets:                 # 공통 진입점 — 모든 환경 동일 네이밍 (템플릿 Makefile 이 단일 기준)
+  run: "setup(ios/android) | local-all(시뮬레이터/에뮬레이터 실행) | local-stop"
+  build: "local-build | prod-build  (xcconfig / flavor / dart-define / eas profile)"
+  common: "test | deploy | help"
+  test: "pnpm test (Jest) && pnpm tsc --noEmit"
+  deploy: "eas submit / fastlane (TestFlight/Play) + eas update(OTA)"
+
+references:
+  - "원본 §4 App(Flutter/React Native + Fastlane + Firebase), §1 Frontend(React/TS)"
+  - ".ref-doc Perplexity-Cli로 ios app을 testflight 배포 (Fastlane/CLI 배포 절차)"

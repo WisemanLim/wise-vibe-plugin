@@ -1,0 +1,72 @@
+id: ict-saas
+title: "정보통신·SaaS (ICT / SaaS — 기본 베이스라인)"
+status: stable
+ksic_section: J
+ksic_divisions: [58, 59, 60, 61, 62, 63]
+classification:
+  isic: J
+  nace: J
+  naics: "51"
+summary: >
+  정보통신/SW개발/SaaS — **소프트웨어 기본 도메인(default)**. 다른 업종도 SW 활동 자체는 J 로
+  이중분류되므로, J 를 베이스라인으로 두고 업종별(P/R/Q/K…) 규제·스택 델타를 그 위에 얹는다.
+  멀티테넌시 + 관측성(OpenTelemetry) + API-first 가 표준.
+
+keywords:
+  - SaaS / 소프트웨어 / software / 정보통신 / ICT
+  - 플랫폼 / platform / API / 멀티테넌시 / multi-tenant
+  - 클라우드 / cloud / 출판 / 방송 / 통신
+
+recommended_profiles:
+  - { id: node-next-nest, why: "Next.js + NestJS, API-first 멀티테넌트 SaaS" }
+  - { id: python-fastapi, why: "데이터/ML 결합 백엔드, FastAPI" }
+  - { id: go-gin,         why: "고처리량 코어 서비스/워커" }
+  - { id: rust-axum,      why: "극한 성능/메모리안전 서비스" }
+
+stack_overrides:
+  frontend:   "Next.js(App Router) + TS + Tailwind/shadcn"
+  backend:    "NestJS(TS) 또는 FastAPI(Python), REST/GraphQL, OpenAPI 계약(API-first)"
+  data:       "PostgreSQL + Prisma, Redis(캐시/브로커/큐)"
+  tenancy:    "subdomain/row-level(RLS) → schema/DB-per-tenant(스케일)"
+  observability: "OpenTelemetry(트레이스/로그/메트릭) 티어드 보관, 피처플래그"
+
+korea_regulations:
+  - { name: "정보통신망법", impact: "네트워크·정보보호 의무(§47=ISMS 근거), 침해사고 신고" }
+  - { name: "개인정보보호법(PIPA)", impact: "PII 동의·최소화·유출통지(§32-2)" }
+  - { name: "ISMS-P", impact: "대형 ICT 서비스 의무, 접근로그·변경관리·암호화 증적, 3년 주기" }
+  - { name: "CSAP(클라우드)", since: "2025 온라인 발급", impact: "공공/정부 클라우드 판매 시 IaaS/SaaS/DaaS 인증" }
+
+global_compliance:
+  - "SOC 2 Type II (US SaaS, 6~12개월 통제)"
+  - "ISO/IEC 27001 (SOC2와 40~85% 통제 중첩)"
+  - "GDPR (EU 고객/테넌트)"
+
+data_classes:
+  - { name: "테넌트 데이터", level: "민감", note: "고객별 격리(RLS/스키마/DB)" }
+  - { name: "고객 PII", level: "민감", note: "PIPA/GDPR" }
+  - { name: "인증/아이덴티티(RBAC)", level: "규제대상", note: "접근통제" }
+  - { name: "감사로그/텔레메트리", level: "내부", note: "SOC2/ISO 보관·삭제정책" }
+
+infra_patterns:
+  - "멀티테넌트 격리(RLS/스키마/DB-per-tenant)"
+  - "관측성(OTel 콜렉터→티어드 스토리지, 검증된 삭제 CC6.5/A.8.10)"
+  - "피처플래그, API 게이트웨이, 수평 오토스케일, 시크릿 관리"
+  - "표준 CI/CD"
+
+dev_env_special:
+  - "테넌트 격리 테스트(크로스테넌트 누출 단언, RLS 강제)"
+  - "표준 CI/CD(lint/type/test/build/deploy)"
+  - "텔레메트리 보관/삭제 검증(CC6.5/A.8.10), OpenAPI 계약 테스트"
+  - "SOC2/ISO 통제 증적 자동화(접근로그·변경관리)"
+
+testing_additions:
+  - "크로스테넌트 데이터 누출 차단(RLS)"
+  - "OpenAPI 계약 적합성(contract test)"
+  - "감사로그 보관기간 경과 삭제 증명"
+
+references:
+  - "https://isms-p.or.kr/sysm/intro/selectSysmCertDetail.do (ISMS-P)"
+  - "https://isms.kisa.or.kr/main/csap/notice/ (CSAP 2025)"
+  - "https://secureframe.com/blog/soc-2-vs-iso-27001"
+  - "https://oneuptime.com/blog/post/2026-02-06-telemetry-retention-soc2-iso27001/view"
+  - "https://www.ideadope.com/roadmaps/how-to-build-multi-tenant-saas-2025"

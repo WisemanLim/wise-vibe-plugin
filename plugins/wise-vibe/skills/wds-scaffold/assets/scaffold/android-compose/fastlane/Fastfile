@@ -1,0 +1,7 @@
+# {{PROJECT_NAME}} — Fastlane Android (배포 스텁; 키스토어/Play 키는 CI 시크릿 주입, 커밋 금지)
+platform :android do
+  lane :beta do
+    gradle(task: "bundle", flavor: "Prod", build_type: "Release")
+    upload_to_play_store(track: "internal")   # supply
+  end
+end

@@ -1,0 +1,93 @@
+id: ios-swiftui
+title: "iOS Native (Swift + SwiftUI)"
+kind: mobile
+status: stable
+summary: >
+  Swift + SwiftUI 네이티브 iOS. Xcode + iOS Simulator, SwiftPM 의존성, async/await 동시성,
+  SwiftData/CoreData 온디바이스 저장. OS 최신 API·네이티브 성능 극한이 필요할 때.
+when_to_use:
+  - "iOS 전용 또는 iOS 우선 + OS 최신 API 즉시 채택"
+  - "순수 네이티브 성능·시스템 통합(위젯/워치/ARKit 등)"
+  - "Apple 디자인 가이드(HIG) 정합성"
+avoid_when:
+  - "iOS·Android 동시 출시·단일 코드베이스 → flutter-app / react-native-app"
+  - "팀 Swift 숙련도 낮고 일정 촉박"
+
+platforms: [ios]
+
+languages:
+  primary: swift
+  also: []
+
+package_managers:
+  default: SwiftPM
+  allowed: [SwiftPM, CocoaPods]
+  notes: "Swift Package Manager 1순위. 레거시/특정 SDK 만 CocoaPods. Xcode 버전은 .xcode-version 핀."
+
+layers:
+  frontend:
+    framework: "SwiftUI (대안: UIKit interop)"
+    state: "Observation / @Observable (iOS 17+) 또는 MVVM + Combine"
+    navigation: "NavigationStack"
+    test: "XCTest (unit) + XCUITest (UI)"
+  backend: null
+  database:
+    local_store: "SwiftData (iOS 17+) 또는 CoreData / SQLite(GRDB)"
+    remote: "URLSession + async/await (페어링 백엔드: 별도 서버 프로파일)"
+  ops:
+    ci: "GitHub Actions (macOS 러너) + Fastlane (gym/pilot)"
+    signing: "match (App Store Connect API key) — 인증서/프로비저닝 자동화"
+    deploy: "Fastlane pilot → TestFlight → App Store"
+    quality: "SwiftLint + swift-format"
+  app: "iOS (Swift + SwiftUI)"
+
+run_methods:
+  simulator: "xcodebuild + iOS Simulator (또는 Xcode ▶ Run, Cmd+R)"
+  ios: "xcodebuild -scheme App -destination 'platform=iOS Simulator,name=iPhone 15' build"
+  android: "N/A (iOS 전용)"
+  release: "xcodebuild archive → fastlane gym (.ipa)"
+
+environments:                    # 모드 2종 = 빌드 플레이버 / two modes = build flavors
+  local: { flavor: Debug,    api_base: "http://localhost:8000",  signing: debug,   notes: "iOS Simulator, 디버그 서명" }
+  prod:  { flavor: Release,  api_base: "https://api.example",     signing: release, notes: "App Store (Release 스킴)" }
+
+scaffold:
+  tree:
+    - "App/"
+    - "App/Sources/"
+    - "App/Sources/Features/"
+    - "App/Sources/Core/"
+    - "App/Resources/"
+    - "AppTests/"
+    - "AppUITests/"
+    - "fastlane/"
+    - ".github/workflows/"
+  files:
+    - "Package.swift"
+    - "App/Sources/App.swift"
+    - "App/Sources/ContentView.swift"
+    - "App/Sources/Core/Env.swift"
+    - "Config/Debug.xcconfig"
+    - "Config/Release.xcconfig"
+    - "Makefile"
+    - "fastlane/Fastfile"
+    - ".github/workflows/ci.yml"
+
+testing:
+  framework: "XCTest (unit) + XCUITest (UI)"
+  dir: "test/"                                     # 시험표준 증빙(scenario/result/logs). AppTests/ 코드테스트와 별개
+  dev_env: "test/dev-env/"                         # Xcode/시뮬레이터 확인 + 디버그 빌드·부팅 성공
+  impl: "test/impl/<Nth>/"
+  cycle: "시나리오→빌드·실행→오류시 수정·재시험→결과작성 / scenario→build&run→fix&retest→result"
+
+makefile_targets:                 # 공통 진입점 — 모든 환경 동일 네이밍 (템플릿 Makefile 이 단일 기준)
+  run: "setup(ios/android) | local-all(시뮬레이터/에뮬레이터 실행) | local-stop"
+  build: "local-build | prod-build  (xcconfig / flavor / dart-define / eas profile)"
+  common: "test | deploy | help"
+  test: "xcodebuild test -scheme App -destination 'platform=iOS Simulator,name=iPhone 15'"
+  deploy: "fastlane pilot (TestFlight) / deliver (App Store)"
+
+references:
+  - "원본 §4 App(네이티브 iOS)"
+  - "PRD-1-Mobile §2 iOS(Swift + SwiftUI, Xcode, iOS Simulator)"
+  - ".ref-doc Perplexity-Cli로 ios app을 testflight 배포 (Fastlane pilot/CLI 절차)"

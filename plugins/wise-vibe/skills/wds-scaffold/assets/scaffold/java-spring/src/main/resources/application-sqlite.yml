@@ -1,0 +1,7 @@
+# prod + sqlite (DB_ENGINE=sqlite) — SPRING_PROFILES_ACTIVE=prod,sqlite (hibernate-community-dialects)
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:sqlite:/app/data/app.db}
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect

@@ -1,0 +1,16 @@
+# {{PROJECT_NAME}} — local 모드: SQLite + dev 스테이지(cargo run) + 소스 바인드
+services:
+  api:
+    build: { target: dev }
+    env_file: [".env.local"]
+    volumes:
+      - ./:/src
+      - cargo-target:/src/target
+      - cargo-registry:/usr/local/cargo/registry
+      - appdata:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3000/health >/dev/null"]
+      start_period: 180s
+volumes:
+  cargo-target:
+  cargo-registry:

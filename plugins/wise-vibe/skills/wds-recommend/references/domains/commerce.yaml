@@ -1,0 +1,75 @@
+id: commerce
+title: "도소매·이커머스 (Commerce / Retail)"
+status: stable
+ksic_section: G
+ksic_divisions: [45, 46, 47]
+classification:
+  isic: G
+  nace: G
+  naics: "44-45 / 42"
+summary: >
+  전자상거래/리테일. 고동시성(타임딜·오픈런) 재고정합성 + 멱등 결제 + 검색이 핵심.
+  헤드리스/컴포저블 커머스(API-first) 트렌드. 2025 전자금융거래법 개정으로 정산자금 100% 외부관리
+  (에스크로/신탁/보증보험) — 마켓플레이스/플랫폼은 정산 분리원장 필요.
+
+keywords:
+  - 이커머스 / ecommerce / commerce / retail
+  - 쇼핑 / shopping / 마켓플레이스 / marketplace
+  - 결제 / payment / PG / 정산 / settlement
+  - 재고 / inventory / 주문 / order / 검색 / search
+
+recommended_profiles:
+  - { id: node-next-nest, why: "헤드리스 스토어프론트(Next.js)+ BFF, 어드민" }
+  - { id: go-gin,         why: "고동시성 주문/재고/결제 코어, 멱등" }
+  - { id: python-fastapi, why: "추천·검색랭킹·CDP 분석" }
+
+stack_overrides:
+  commerce:   "헤드리스/컴포저블(API-first), 이벤트드리븐 코어"
+  search:     "Elasticsearch / OpenSearch (상품·패싯), Algolia(호스티드)"
+  cache_cdn:  "Redis/Valkey + CDN/엣지 (트래픽 스파이크)"
+  payments:   "PG 샌드박스(Toss/NICE/KCP/Stripe), 토큰화, Idempotency-Key"
+  data:       "CDP/이벤트 스트리밍(행동데이터), PostgreSQL"
+
+korea_regulations:
+  - { name: "전자상거래법", since: "전부개정 입법예고", impact: "청약철회/환불 플로우, 표시·광고 필수필드, 판매자 신원표시" }
+  - { name: "전자금융거래법(PG)", since: "2025-12-16 공포(~2026 시행)", impact: "정산자금 100% 외부관리(에스크로/신탁/보증), PG 등록 게이팅, 정산 분리원장" }
+  - { name: "개인정보보호법(PIPA) 안전성확보조치", since: "2025-10-31", impact: "고유식별정보 암호화, 차등 접근권한, 접근로그 보관 확대" }
+  - { name: "정보통신망법", impact: "마케팅 푸시/메일 opt-in 동의 + 동의 감사추적" }
+
+global_compliance:
+  - "PCI-DSS 4.0.1 (Req 6.4.3 결제페이지 스크립트 인벤토리+무결성: CSP/SRI, Req 6.4.4 헤더 무결성)"
+  - "GDPR / PSD2 SCA (EU 대상 스토어)"
+
+data_classes:
+  - { name: "결제/카드데이터(CHD)", level: "규제대상", note: "PCI scope, 토큰화" }
+  - { name: "정산정보", level: "규제대상", note: "전자금융거래법(2025 개정) 외부관리" }
+  - { name: "주문정보", level: "민감", note: "구매이력" }
+  - { name: "PII(이름/연락처/주소)", level: "민감", note: "PIPA, 비프로드 마스킹" }
+  - { name: "마케팅 동의 기록", level: "내부", note: "정보통신망법" }
+
+infra_patterns:
+  - "재고 원자적 카운터(Redis/Valkey Lua) — read-then-write 레이스 제거, 어드미션 컨트롤러"
+  - "멱등 결제(Idempotency-Key, UNIQUE(user,sku,sale)) + PAYMENT_FAILED 보상 트랜잭션"
+  - "재고 차감=예약시점 강정합 / 결제 캡처=at-most-once"
+  - "검색 인덱스 파이프라인(ES/OpenSearch) + 소스 DB 동기화"
+  - "CDP/이벤트 스트리밍, 캐시/CDN 스파이크 대응"
+
+dev_env_special:
+  - "부하/스파이크 테스트(블프·타임딜·오픈런 트래픽 모델)"
+  - "결제 샌드박스(PG test keys), 정산 분리원장 대사 테스트"
+  - "동시성 재고정합성/오버셀 테스트"
+  - "PCI 스크립트 무결성 CI(CSP/SRI 검증), 비프로드 PII 마스킹"
+
+testing_additions:
+  - "오버셀 방지: N개 재고에 동시 N+1 주문 → N건만 성공"
+  - "멱등 결제: 중복 결제요청 1건만 캡처"
+  - "정산 대사: 수취 정산금 vs 판매자 분배 일치"
+  - "결제페이지 스크립트 인벤토리 변경 탐지(PCI 6.4.3)"
+
+references:
+  - "https://www.tosspayments.com/blog/articles/amendment (전자금융거래법 PG 개정)"
+  - "https://www.fsc.go.kr/no010101/85751"
+  - "https://www.cela.kr/4/?bmode=view&idx=168696184 (안전성확보조치 2025-10-31)"
+  - "https://www.algolia.com/blog/ecommerce/ecommerce-apis-guide-to-scaling-online-stores-in-2025"
+  - "https://stripe.com/blog/idempotency , https://singhajit.com/flash-sale-system-design/"
+  - "https://sitegrade.io/en/blog/pci-dss-requirements-ecommerce-websites/"

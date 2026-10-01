@@ -1,0 +1,29 @@
+# ===== Swift / Xcode (iOS) =====
+## Build / DerivedData
+build/
+DerivedData/
+*.xcarchive
+*.ipa
+*.dSYM.zip
+*.dSYM
+## Xcode user state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+## SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+## CocoaPods (사용 시 / if used)
+Pods/
+## Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/
+## 서명/시크릿 — 절대 커밋 금지 / never commit signing material
+*.mobileprovision
+*.p12
+*.cer
+*.certSigningRequest
+AuthKey_*.p8

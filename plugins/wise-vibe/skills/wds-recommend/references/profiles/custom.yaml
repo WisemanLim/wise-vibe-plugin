@@ -1,0 +1,412 @@
+id: custom
+title: "Custom (사용자 지정 스택)"
+kind: meta          # meta: recommend/scaffold 시 컴포넌트 카탈로그·추론 엔진으로 동작
+status: stable
+summary: >
+  스택 일부(언어/프레임워크/DB/캐시/프론트엔드 등)를 지정하면 나머지를 자동 추론해
+  최적 전체 스택을 구성·추천. 복수 언어 혼합(예: Spring Boot + React)도 지원.
+  .gitignore 는 선택 컴포넌트 프래그먼트 병합 생성.
+when_to_use:
+  - "이미 특정 언어·프레임워크·DB 가 결정되어 있고 나머지 스택을 완성하고 싶을 때"
+  - "기존 프로파일(go-gin, node-next-nest 등)에 없는 조합이 필요할 때"
+  - "복수 런타임(예: Java 백엔드 + React 프론트) 혼합 구성이 필요할 때"
+  - "팀 기술 스택을 입력하면 표준 나머지(ops/DB/CI)를 자동 완성하고 싶을 때"
+avoid_when:
+  - "기존 프로파일(go-gin/node-next-nest/python-fastapi/java-spring/csharp-dotnet 등)이 정확히 맞을 때 → 해당 프로파일 직접 사용"
+
+# ──────────────────────────────────────────────────────────────
+# 컴포넌트 카탈로그 (component catalog)
+# recommend/scaffold 시 이 카탈로그를 스캔해 지정 컴포넌트를 인식·매핑
+# ──────────────────────────────────────────────────────────────
+components:
+
+  runtime:
+    - id: node
+      title: "Node.js 22+"
+      aliases: [nodejs, js, javascript, typescript, ts]
+      gitignore: [node]
+      default_framework: nest
+      default_package_manager: pnpm
+      base_profile: node-next-nest
+    - id: python
+      title: "Python 3.12+"
+      aliases: [py]
+      gitignore: [python]
+      default_framework: fastapi
+      default_package_manager: uv
+      base_profile: python-fastapi
+    - id: go
+      title: "Go 1.23+"
+      aliases: [golang]
+      gitignore: [go]
+      default_framework: gin
+      default_package_manager: go-modules
+      base_profile: go-gin
+    - id: rust
+      title: "Rust (stable)"
+      aliases: []
+      gitignore: [rust]
+      default_framework: axum
+      default_package_manager: cargo
+      base_profile: rust-axum
+    - id: java
+      title: "Java 21 (LTS)"
+      aliases: [jvm]
+      gitignore: [java]
+      default_framework: spring-boot
+      default_package_manager: gradle
+      base_profile: java-spring
+    - id: csharp
+      title: "C# / .NET 8 LTS"
+      aliases: [dotnet, "c#", cs, net]
+      gitignore: [csharp]
+      default_framework: aspnet
+      default_package_manager: nuget
+      base_profile: csharp-dotnet
+    - id: kotlin
+      title: "Kotlin (JVM)"
+      aliases: []
+      gitignore: [java]
+      default_framework: spring-boot
+      default_package_manager: gradle
+      base_profile: java-spring
+      notes: "Spring Boot 에서 Kotlin DSL 사용 가능."
+    - id: swift
+      title: "Swift (iOS/macOS)"
+      aliases: []
+      gitignore: [swift]
+      default_framework: vapor
+      base_profile: ios-swiftui
+      notes: "서버 사이드(Vapor) 또는 iOS 앱. 서버 용도 드묾."
+
+  framework:
+    # Backend
+    - id: spring-boot
+      aliases: [spring, springboot, "spring-mvc"]
+      runtime: java
+      base_profile: java-spring
+    - id: aspnet
+      aliases: [aspnetcore, "asp.net", dotnet-api]
+      runtime: csharp
+      base_profile: csharp-dotnet
+    - id: fastapi
+      aliases: []
+      runtime: python
+      base_profile: python-fastapi
+    - id: gin
+      aliases: [gin-gonic]
+      runtime: go
+      base_profile: go-gin
+    - id: axum
+      aliases: []
+      runtime: rust
+      base_profile: rust-axum
+    - id: nest
+      aliases: [nestjs]
+      runtime: node
+      base_profile: node-next-nest
+    - id: express
+      aliases: [expressjs]
+      runtime: node
+      base_profile: node-next-nest
+      notes: "NestJS 로 전환 권장. 단순 서비스엔 허용."
+    - id: django
+      aliases: []
+      runtime: python
+      base_profile: python-fastapi
+      notes: "Django REST Framework. 풀스택 필요 시 고려."
+    # Frontend
+    - id: next
+      aliases: [nextjs, "next.js"]
+      runtime: node
+      layer: frontend
+      gitignore: [node]
+      base_profile: node-next-nest
+    - id: react
+      aliases: [reactjs, "react.js", cra]
+      runtime: node
+      layer: frontend
+      gitignore: [node]
+      notes: "SPA. SSR 필요 시 Next.js 권장."
+    - id: vue
+      aliases: [vuejs, "vue.js", nuxt]
+      runtime: node
+      layer: frontend
+      gitignore: [node]
+    - id: angular
+      aliases: []
+      runtime: node
+      layer: frontend
+      gitignore: [node]
+    - id: svelte
+      aliases: [sveltekit]
+      runtime: node
+      layer: frontend
+      gitignore: [node]
+
+  database:
+    # prod RDBMS = wds-scaffold --db (local 은 항상 sqlite)
+    - id: postgres
+      aliases: [postgresql, pg, psql]
+      scaffold_arg: "--db postgres"
+      default: true
+    - id: mysql
+      aliases: []
+      scaffold_arg: "--db mysql"
+    - id: mariadb
+      aliases: []
+      scaffold_arg: "--db mariadb"
+    - id: sqlite
+      aliases: []
+      scaffold_arg: "--db sqlite"
+      notes: "local 은 항상 SQLite. prod 에 지정하면 단일 노드 소규모 운영."
+    - id: mongodb
+      aliases: [mongo]
+      scaffold_arg: "--extras mongodb"
+      notes: "RDBMS 대체가 아니라 추가 인프라. 앱 연결 코드는 implement 단계."
+    - id: mssql
+      aliases: ["sql-server", sqlserver]
+      scaffold_arg: null
+      notes: "미지원(템플릿 없음) — postgres 로 대체 제안하거나 implement 단계에서 수동 추가."
+
+  cache:
+    - id: redis
+      aliases: []
+      scaffold_arg: "--extras redis"
+    - id: memcached
+      aliases: []
+      scaffold_arg: "--extras memcached"
+
+  messaging:
+    - id: kafka
+      aliases: [apache-kafka]
+      scaffold_arg: "--extras kafka"
+    - id: rabbitmq
+      aliases: [amqp]
+      scaffold_arg: "--extras rabbitmq"
+
+  ops:
+    - id: docker
+      default: true
+    - id: kubernetes
+      aliases: [k8s]
+      default: true
+    - id: helm
+      default: true
+    - id: github-actions
+      aliases: [gha]
+      default: true
+    - id: gitlab-ci
+      aliases: [gitlab]
+
+# ──────────────────────────────────────────────────────────────
+# 추론 규칙 (inference_rules)
+# 지정 컴포넌트 → 미지정 부분 자동 채움
+# 규칙은 위에서 아래 순으로 평가. 먼저 매칭된 규칙이 우선.
+# ──────────────────────────────────────────────────────────────
+inference_rules:
+
+  # 런타임 지정 → 프레임워크·DB 기본
+  - when: { runtime: java }
+    infer: { framework: spring-boot, database: postgres, build: gradle, base_profile: java-spring }
+  - when: { runtime: csharp }
+    infer: { framework: aspnet, database: postgres, base_profile: csharp-dotnet }
+  - when: { runtime: python }
+    infer: { framework: fastapi, database: postgres, base_profile: python-fastapi }
+  - when: { runtime: go }
+    infer: { framework: gin, database: postgres, base_profile: go-gin }
+  - when: { runtime: rust }
+    infer: { framework: axum, database: postgres, base_profile: rust-axum }
+  - when: { runtime: node, frontend: null }
+    infer: { framework: nest, database: postgres, base_profile: node-next-nest }
+
+  # 프레임워크 지정 → 런타임 역추론
+  - when: { framework: spring-boot }
+    infer: { runtime: java, database: postgres, base_profile: java-spring }
+  - when: { framework: aspnet }
+    infer: { runtime: csharp, database: postgres, base_profile: csharp-dotnet }
+  - when: { framework: fastapi }
+    infer: { runtime: python, database: postgres, base_profile: python-fastapi }
+  - when: { framework: gin }
+    infer: { runtime: go, database: postgres, base_profile: go-gin }
+  - when: { framework: axum }
+    infer: { runtime: rust, database: postgres, base_profile: rust-axum }
+  - when: { framework: nest }
+    infer: { runtime: node, database: postgres, base_profile: node-next-nest }
+  - when: { framework: next }
+    infer: { runtime: node, backend_framework: nest, database: postgres, base_profile: node-next-nest }
+  - when: { framework: django }
+    infer: { runtime: python, database: postgres, base_profile: python-fastapi }
+
+  # 프론트엔드 단독 지정 → Node 백엔드 추론
+  - when: { frontend: [react, vue, angular, svelte], backend_runtime: null }
+    infer: { backend_runtime: node, backend_framework: nest, database: postgres }
+
+  # DB 지정 → ops 기본
+  - when: { database: mssql }
+    infer: { runtime_hint: [csharp, java], base_profile: csharp-dotnet }
+
+  # 복합: Java + React/Vue → 모노레포 또는 분리 서비스
+  - when: { runtime: java, frontend: [react, vue, next, angular] }
+    infer:
+      layout: monorepo
+      structure: "apps/api/ (Spring Boot) + apps/web/ (프론트엔드)"
+      gitignore: [java, node]
+      base_profile: java-spring
+      notes: "백엔드 java-spring + 프론트엔드 별도. pnpm 워크스페이스 또는 별도 레포 권장."
+
+  # 복합: C# + React/Vue
+  - when: { runtime: csharp, frontend: [react, vue, next, angular] }
+    infer:
+      layout: monorepo
+      structure: "src/Api/ (ASP.NET Core) + src/Web/ (프론트엔드)"
+      gitignore: [csharp, node]
+      base_profile: csharp-dotnet
+      notes: "백엔드 csharp-dotnet + 프론트엔드. .NET 8 static file serving 또는 별도 SPA."
+
+  # 복합: Python + React/Vue
+  - when: { runtime: python, frontend: [react, vue, next, angular] }
+    infer:
+      layout: monorepo
+      gitignore: [python, node]
+      base_profile: python-fastapi
+      notes: "FastAPI 백엔드 + 프론트엔드 SPA."
+
+# ──────────────────────────────────────────────────────────────
+# gitignore 합성 (gitignore_composition)
+# ──────────────────────────────────────────────────────────────
+gitignore_composition:
+  strategy: merge      # 각 컴포넌트 프래그먼트 병합 + 중복 제거 + _common + _platform 추가
+  always_include: [_common, _platform]
+  fragment_map:
+    node: wds-scaffold/assets/gitignore/node.gitignore
+    python: wds-scaffold/assets/gitignore/python.gitignore
+    go: wds-scaffold/assets/gitignore/go.gitignore
+    rust: wds-scaffold/assets/gitignore/rust.gitignore
+    java: wds-scaffold/assets/gitignore/java.gitignore
+    csharp: wds-scaffold/assets/gitignore/csharp.gitignore
+    swift: wds-scaffold/assets/gitignore/swift.gitignore
+    android: wds-scaffold/assets/gitignore/android.gitignore
+    flutter: wds-scaffold/assets/gitignore/flutter.gitignore
+    react-native: wds-scaffold/assets/gitignore/react-native.gitignore
+    c-cpp: wds-scaffold/assets/gitignore/c-cpp.gitignore
+    _common: wds-scaffold/assets/gitignore/_common.gitignore
+    _platform: wds-scaffold/assets/gitignore/_platform.gitignore
+  runtime_to_fragment:
+    node:   [node]
+    python: [python]
+    go:     [go]
+    rust:   [rust]
+    java:   [java]
+    kotlin: [java]
+    csharp: [csharp]
+    swift:  [swift]
+  frontend_to_fragment:
+    react:   [node]
+    vue:     [node]
+    angular: [node]
+    svelte:  [node]
+    next:    [node]
+
+# ──────────────────────────────────────────────────────────────
+# 스캐폴드 전략 (scaffold_strategy)
+# kind: meta 이므로 정적 파일 대신 resolve 후 base_profile scaffold 를 사용하고
+# 추가 인프라는 --extras 로 compose/*.yml 에 추가.
+# ──────────────────────────────────────────────────────────────
+scaffold_strategy:
+  resolve_base_profile: true      # 추론된 base_profile 스캐폴드를 기반으로 사용
+  database_to_arg: true           # components.database → --db (prod RDBMS) 또는 --extras mongodb
+  infra_to_extras: true           # components.cache/messaging → --extras (compose/*.yml)
+  output_manifest: CUSTOM_STACK.md   # 생성 완료 후 선택 컴포넌트 요약 파일
+
+# ──────────────────────────────────────────────────────────────
+# 조합 시너지 점수 (combination_score_modifiers)
+# recommend 시 조합 품질 평가에 사용 (양수=권장, 음수=비권장)
+# ──────────────────────────────────────────────────────────────
+combination_score_modifiers:
+  - pair: [spring-boot, postgres]
+    score: +10
+  - pair: [spring-boot, mysql]
+    score: +8
+  - pair: [aspnet, mssql]
+    score: +10
+  - pair: [aspnet, postgres]
+    score: +8
+  - pair: [fastapi, postgres]
+    score: +10
+  - pair: [gin, postgres]
+    score: +10
+  - pair: [nest, postgres]
+    score: +10
+  - pair: [next, nest]
+    score: +12
+    notes: "같은 Node 런타임, 언어 통일"
+  - pair: [react, nest]
+    score: +8
+  - pair: [react, spring-boot]
+    score: +7
+  - pair: [vue, spring-boot]
+    score: +6
+  - pair: [java, redis]
+    score: +7
+  - pair: [spring-boot, kafka]
+    score: +8
+    notes: "Spring Kafka 생태계"
+  - pair: [fastapi, redis]
+    score: +8
+  - pair: [node, mssql]
+    score: -3
+    notes: "드라이버 성숙도 낮음, postgres 권장"
+
+# ──────────────────────────────────────────────────────────────
+# 아래는 스키마 호환을 위한 기본값 (meta 이므로 실제 사용 안 됨)
+# resolve 후 base_profile 의 값으로 대체됨
+# ──────────────────────────────────────────────────────────────
+languages:
+  primary: _resolved_      # 추론 후 채워짐
+  also: []
+
+package_managers:
+  default: _resolved_
+  allowed: [_resolved_]
+  notes: "컴포넌트 추론 후 결정."
+
+layers:
+  frontend: _resolved_
+  backend:  _resolved_
+  database: _resolved_
+  ops:
+    ci: "GitHub Actions (or GitLab CI)"
+    container: "Docker + Docker Compose"
+    deploy: "docker compose prod 모드 (make deploy) — K8s/Helm 은 확장 옵션"
+    quality: "SonarQube + 언어별 linter"
+  app: null
+
+run_methods:                     # docker compose 전용
+  container:
+    local: "make local-all"
+    prod: "make prod-all"
+
+environments:                    # 모드 2종
+  local: { db: sqlite, compose: "docker-compose.yml + docker-compose.local.yml", notes: "SQLite 고정" }
+  prod:  { db: _resolved_default, db_options: [postgres, mysql, mariadb, sqlite], compose: "docker-compose.yml + docker-compose.prod.yml", notes: "--db 로 선택, 기본 postgres" }
+
+scaffold:
+  tree: []     # base_profile 템플릿 + --extras(compose/*.yml) 로 채워짐
+  files: []    # 동적 결정
+
+testing:
+  framework: "_resolved_ (base_profile 에 따라 결정)"
+  dir: "test/"
+  dev_env: "test/dev-env/"
+  impl: "test/impl/<Nth>/"
+  cycle: "시나리오→진행→오류시 수정·재시험→결과작성"
+
+makefile_targets:
+  mode_family: "<mode>-all | -build | -logs | -stop | -restart | -ps  (mode = local | prod)"
+  db: "db-ping | db-shell | db-migrate | db-seed | db-reset | db-fresh  [ENV=local|prod]"
+  common: "preflight | test | shell | deploy | help"
+
+references:
+  - "각 컴포넌트 base_profile 의 references 참조"
+  - "wds-scaffold/references/custom-flow.md — 대화형 선택 → 프로파일 + --db + --extras"

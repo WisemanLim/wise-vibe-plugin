@@ -1,0 +1,11 @@
+# {{PROJECT_NAME}} — prod 모드: runtime-api/web 스테이지 + DB_ENGINE RDBMS ({{DB_ENGINE}})
+services:
+  api:
+    env_file: [".env.prod"]
+    restart: unless-stopped
+{{DB_DEPENDS_ON}}
+  web:
+    env_file: [".env.prod"]
+    restart: unless-stopped
+{{DB_SERVICE}}
+{{DB_VOLUMES}}

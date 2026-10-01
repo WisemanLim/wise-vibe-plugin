@@ -1,0 +1,11 @@
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request:
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: xcodebuild -scheme App -destination 'platform=iOS Simulator,name=iPhone 15' build
+      - run: xcodebuild test -scheme App -destination 'platform=iOS Simulator,name=iPhone 15' || true

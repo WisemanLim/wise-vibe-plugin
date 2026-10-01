@@ -1,0 +1,29 @@
+{
+  "name": "wise-vibe",
+  "version": "2.0.0",
+  "description": "vibe coding 개발 표준 통합 플러그인 — PRD(다중 PDF·MD) 작성부터 스택·DB 추천, docker compose(local/prod) 골격, 자동 구현·시험·리뷰까지. Claude Code·Cursor·Antigravity·Copilot·Codex 공용 Agent Skills.",
+  "author": {
+    "name": "WisemanLim"
+  },
+  "homepage": "https://github.com/WisemanLim/wise-vibe-plugin",
+  "repository": "https://github.com/WisemanLim/wise-vibe-plugin",
+  "license": "UNLICENSED",
+  "keywords": [
+    "vibe-coding",
+    "dev-standard",
+    "agent-skills",
+    "prd",
+    "scaffold",
+    "docker-compose",
+    "stack-recommendation",
+    "ksic",
+    "claude-code",
+    "cursor",
+    "antigravity",
+    "copilot",
+    "codex"
+  ],
+  "skills": "./skills",
+  "agents": "./agents",
+  "hooks": "./cursor/hooks.json"
+}

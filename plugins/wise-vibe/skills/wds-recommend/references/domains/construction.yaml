@@ -1,0 +1,64 @@
+id: construction
+title: "건설·건축 (ConTech / BIM)"
+status: preview
+ksic_section: F
+ksic_divisions: [41, 42, 43]
+classification:
+  isic: F
+  nace: F
+  naics: "23"
+summary: >
+  건설사업관리·BIM·현장안전. 대용량 BIM/도면(IFC) 처리, 공정·원가 관리, 현장 안전(중대재해)
+  모니터링이 핵심. 옥외/지하 현장의 모바일·오프라인과 IoT 안전 센서 연동.
+
+keywords:
+  - 건설 / construction / contech
+  - BIM / IFC / 도면 / drawing / CAD
+  - 현장안전 / safety / 중대재해 / 공정관리
+  - 시공 / 감리 / 적산 / 원가 / estimating
+
+recommended_profiles:
+  - { id: node-next-nest, why: "사업관리/공정·원가 포털, BIM 뷰어 BFF" }
+  - { id: python-fastapi, why: "BIM/IFC 파싱·물량 산출, 안전 영상분석 ML" }
+  - { id: react-native-app, why: "현장 점검/안전보고 모바일(오프라인)" }
+  - { id: go-gin,         why: "대용량 도면/파일 처리·IoT 센서 수집" }
+
+stack_overrides:
+  database:   "PostgreSQL + PostGIS(현장 위치), 오브젝트스토리지(BIM/도면 대용량)"
+  messaging:  "MQTT/Kafka (안전 센서·웨어러블 텔레메트리)"
+  files:      "IFC/BCF 파서, 대용량 업로드(멀티파트/재개)"
+  observability: "현장 디바이스/센서 상태 모니터링"
+
+korea_regulations:
+  - { name: "중대재해처벌법", impact: "안전관리 기록·추적성, 위험 알림·증적 보존 필수" }
+  - { name: "산업안전보건법", impact: "현장 안전점검 체크리스트·교육 이력" }
+  - { name: "건설기술진흥법", impact: "시공/감리 기록, 스마트 안전장비 연계" }
+  - { name: "건축물 생애주기(BIM 의무화 로드맵)", impact: "IFC 표준 데이터 산출물 보존" }
+
+global_compliance:
+  - "ISO 19650 (BIM 정보관리)"
+  - "buildingSMART IFC / BCF"
+
+data_classes:
+  - { name: "BIM/도면(IFC)", level: "운영", note: "대용량, 버전관리" }
+  - { name: "안전점검/사고 기록", level: "무결성", note: "중대재해법 증적, append-only" }
+  - { name: "작업자 PII/위치", level: "민감", note: "PIPA·위치정보법" }
+  - { name: "원가/계약", level: "기밀", note: "사업 기밀" }
+
+infra_patterns:
+  - "대용량 BIM/도면 오브젝트스토리지 + 비동기 변환 워커"
+  - "현장 안전 텔레메트리 실시간 알림(임계 초과 즉시)"
+  - "오프라인 현장 점검 → 동기화"
+
+dev_env_special:
+  - "합성 BIM/IFC 샘플로 비프로드 시험(실 사업데이터 반입 금지)"
+  - "안전 센서 시뮬레이터"
+
+testing_additions:
+  - "중대재해 위험 알림 임계 초과 시 즉시 통지·증적 기록"
+  - "IFC 파싱 정확도(물량 산출) 회귀 검증"
+
+references:
+  - "https://www.law.go.kr/ (중대재해처벌법·산업안전보건법)"
+  - "https://www.iso.org/standard/68078.html (ISO 19650)"
+  - "https://www.buildingsmart.org/standards/bsi-standards/industry-foundation-classes/"

@@ -1,0 +1,11 @@
+# {{PROJECT_NAME}} — Fastlane iOS (배포 스텁; 시크릿은 match/ASC API key 주입)
+# 참고: .ref-doc "Cli로 ios app을 testflight 배포"
+platform :ios do
+  lane :build do
+    build_app(scheme: "App")            # gym
+  end
+  lane :beta do
+    build_app(scheme: "App")
+    upload_to_testflight(skip_waiting_for_build_processing: true)
+  end
+end

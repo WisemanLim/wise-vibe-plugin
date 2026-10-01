@@ -1,0 +1,86 @@
+id: rust-axum
+title: "Rust (Axum)"
+status: stable
+summary: >
+  타입 안전·고성능 Axum 웹 프레임워크(대안 Actix). 메모리 안전이 필요한 코어/워커, Tauri 데스크톱 빌드 파이프라인.
+when_to_use:
+  - "메모리 안전 + 극한 성능이 동시에 필요한 코어"
+  - "대량 문서 처리 / 재색인 워커"
+  - "Tauri 기반 데스크톱 앱 백엔드"
+avoid_when:
+  - "빠른 프로토타이핑·풍부한 ML 생태계 우선 → python-fastapi"
+  - "팀 Rust 숙련도가 낮고 일정이 촉박할 때"
+
+languages:
+  primary: rust
+  also: []
+
+package_managers:
+  default: cargo
+  allowed: [cargo]
+  notes: "Cargo.toml / Cargo.lock. workspace 로 멀티 크레이트 관리."
+
+layers:
+  frontend: null
+  backend:
+    framework: "Axum (대안: Actix Web)"
+    orm: "SQLx (compile-time checked) 또는 SeaORM"
+    runtime: "tokio"
+  database:
+    default: postgres
+    local: sqlite
+    prod_options: [postgres, mysql, mariadb, sqlite]           # wds-scaffold --db
+    cache: "redis (선택: --extras redis)"
+  ops:
+    ci: "GitHub Actions (or GitLab CI)"
+    container: "Docker (multi-stage dev/runtime) + Docker Compose (local/prod)"
+    deploy: "docker compose prod 모드 (make deploy) — K8s/Helm/Argo CD 는 확장 옵션"
+    quality: "clippy + cargo test + cargo audit"
+  app: "Tauri (desktop, optional)"
+
+run_methods:                     # docker compose 전용 (호스트 프로세스 매니저 없음)
+  container:
+    local: "make local-all   # docker-compose.yml + docker-compose.local.yml + .env.local (dev 스테이지)"
+    prod: "make prod-all     # docker-compose.yml + docker-compose.prod.yml + .env.prod (runtime 스테이지)"
+
+environments:                    # 모드 2종 / two modes
+  local: { db: sqlite,   compose: "docker-compose.yml + docker-compose.local.yml", notes: "dev 스테이지 · 소스 바인드 · SQLite 고정" }
+  prod:  { db: postgres, db_options: [postgres, mysql, mariadb, sqlite], compose: "docker-compose.yml + docker-compose.prod.yml", notes: "runtime 스테이지 · --db 로 RDBMS 선택 (기본 postgres)" }
+
+scaffold:                         # 정적 템플릿: wds-scaffold/assets/scaffold/rust-axum/
+  template: "rust-axum"
+  tree:
+    - ".github/workflows/"
+    - "src/"
+    - "test/dev-env/"
+  files:
+    - "Cargo.toml"
+    - "Dockerfile"
+    - "docker-compose.local.yml"
+    - "docker-compose.prod.yml"
+    - "docker-compose.yml"
+    - "src/main.rs"
+    - "Makefile"
+    - ".env.local"
+    - ".env.prod"
+    - ".env.example"
+    - ".github/workflows/ci.yml"
+    - ".dockerignore"
+    - "README.md"
+    - "README.en.md"
+    - "test/dev-env/scenario.md"
+
+testing:
+  framework: "cargo test (+ reqwest/tower for HTTP)" # 시험 러너 / test runner
+  dir: "test/"                                      # test-runner 표준 / convention
+  dev_env: "test/dev-env/"                          # 표준 환경 검증 1회 / env verification, once
+  impl: "test/impl/<Nth>/"                          # 구현마다 / per implementation iteration
+  cycle: "시나리오→진행→오류시 수정·재시험→결과작성 / scenario→run→fix&retest→result"
+
+makefile_targets:                 # 생성 Makefile (wds-scaffold assets/common/server.mk) 이 단일 기준
+  mode_family: "<mode>-all | -build | -logs | -stop | -restart | -ps  (mode = local | prod)"
+  db: "db-ping | db-shell | db-migrate | db-seed | db-reset | db-fresh  [ENV=local|prod]  (reset/fresh 는 local 전용)"
+  common: "preflight | test | shell | deploy | help"
+
+references:
+  - "원본 §2 Backend(Axum/Actix), §4 App(Tauri), §5 backend.default-rust"

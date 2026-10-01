@@ -1,0 +1,70 @@
+id: govtech
+title: "공공행정·공공SI (GovTech)"
+status: stable
+ksic_section: O
+ksic_divisions: [84]
+classification:
+  isic: O
+  nace: O
+  naics: "92"
+summary: >
+  공공행정/국방/사회보장 정보시스템. eGovFrame(Spring/Java)가 사실상 기본, 웹접근성(KWCAG 2.2)·
+  PIPA 가 하드 제약. 망분리는 N2SF(국가망보안체계, C/S/O 등급) 로 전환 중, CSAP 도 2026부터 완화 흐름.
+
+keywords:
+  - 공공 / public / government / 행정 / govtech
+  - 전자정부 / eGovFrame / 공공SI / 지자체
+  - 국방 / defense / 사회보장 / 민원
+
+recommended_profiles:
+  - { id: node-next-nest, why: "접근성(KWCAG) 우선 시민포털, 모던 프론트 + BFF" }
+  - { id: python-fastapi, why: "데이터/통계/공공데이터 API" }
+  - { id: go-gin,         why: "고처리량 민원/연계 게이트웨이" }
+
+stack_overrides:
+  framework_reality: "전자정부 표준프레임워크(eGovFrame) v4.3 — Spring Boot 3 / JDK 17, MSA-Template, PaaS-TA"
+  accessibility: "KWCAG 2.2(4원칙 33항목), KRDS(정부 디자인시스템), 자동+수동 스크린리더"
+  deployment: "온프렘/프라이빗/CSAP 인증 공공클라우드, 장기 유지보수·벤더중립"
+  network: "망분리 → N2SF 등급(C 기밀/S 민감/O 공개) 기반 분리"
+
+korea_regulations:
+  - { name: "전자정부법", impact: "표준화·상호운용·재사용 가능 공공SW 의무" }
+  - { name: "전자정부 표준프레임워크(eGovFrame)", since: "v4.3(JDK17)", impact: "공공사업 사실상 표준, 모던 스택도 정합 필요" }
+  - { name: "CSAP(클라우드 보안인증)", since: "2026 완화", impact: "N2SF 등급제 전환, 2026부터 보안적합성 검증으로 진입" }
+  - { name: "정보시스템 구축·운영 지침(MOIS 2025-1)", since: "2025-01-02", impact: "구축·운영·보안·조달 규칙" }
+  - { name: "개인정보보호법(PIPA)", impact: "주민 PII(주민번호/주소) 처리·접근로그·최소수집" }
+  - { name: "공공데이터법", impact: "오픈 API/데이터셋 공개 요구" }
+  - { name: "웹접근성/KWCAG 2.2", since: "2022-12-28 개정", impact: "접근성 인증 필수(디지털포용법·차별금지법)" }
+
+global_compliance:
+  - "WCAG 2.1/2.2 (ARIA, 대비, 키보드, 스크린리더)"
+  - "FedRAMP-analog → CSAP/N2SF (데이터 등급별 인가)"
+
+data_classes:
+  - { name: "행정정보", level: "규제대상", note: "N2SF 등급(C/S/O)" }
+  - { name: "주민 PII(주민번호/주소)", level: "규제대상", note: "PIPA" }
+  - { name: "사회보장/급여 데이터", level: "규제대상", note: "민감" }
+  - { name: "국방 관련 기밀", level: "규제대상", note: "N2SF C 등급" }
+
+infra_patterns:
+  - "망분리 → N2SF 등급(C/S/O) 분리, 온프렘·프라이빗 공공클라우드"
+  - "CSAP 인증 공공클라우드(2026 완화), 감사/로깅 의무"
+  - "PaaS-TA / Cloud Foundry 클라우드네이티브 공공 워크로드"
+
+dev_env_special:
+  - "접근성 테스트(KWCAG 2.2/WCAG 자동+수동 스크린리더)"
+  - "eGovFrame 호환·버전 정합 점검, 내부 Maven/Nexus 미러"
+  - "망분리 dev 제약(격리 dev/build, N2SF 완화 반영), 보안적합성 검증 준비"
+
+testing_additions:
+  - "KWCAG 2.2 33항목 접근성 자동 점검 + 스크린리더 수동"
+  - "주민번호 등 고유식별정보 암호화·마스킹 검증"
+  - "공공데이터 오픈 API 스키마/응답 적합성"
+
+references:
+  - "https://www.egovframe.go.kr/wiki/doku.php?id=egovframework:dev4.3:gettingstarted"
+  - "https://github.com/eGovFramework"
+  - "https://zdnet.co.kr/view/?no=20250124164856 (N2SF 국가망보안체계)"
+  - "https://www.etnews.com/20251212000235 (CSAP 2026 완화)"
+  - "https://a11ykr.github.io/kwcag22/ (KWCAG 2.2)"
+  - "https://www.krds.go.kr/html/site/utility/utility_04.html (KRDS)"

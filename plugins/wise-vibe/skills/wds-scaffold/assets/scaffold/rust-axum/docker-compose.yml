@@ -1,0 +1,14 @@
+# {{PROJECT_NAME}} — 공통 정의 (make local-all | make prod-all)
+services:
+  api:
+    build: { context: ., dockerfile: Dockerfile, target: runtime }
+    image: {{PROJECT_NAME}}-api:${APP_ENV:-local}
+    ports: ["${BIND_HOST:-127.0.0.1}:${API_PORT:-3000}:3000"]
+    volumes: ["appdata:/app/data"]
+    healthcheck:
+      test: ["CMD", "/app/server", "--healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+volumes:
+  appdata:

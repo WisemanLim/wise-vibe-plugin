@@ -1,0 +1,13 @@
+# ===== Go =====
+bin/
+*.exe
+*.exe~
+*.test
+*.out
+vendor/
+go.work.sum
+# Air (live-reload)
+tmp/main
+tmp/air.log
+# GoLand / IntelliJ
+.idea/

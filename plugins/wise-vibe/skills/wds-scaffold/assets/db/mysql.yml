@@ -1,0 +1,14 @@
+  db:
+    image: ${DB_IMAGE:-mysql:8.4}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD 필요 / required}
+      MYSQL_DATABASE: ${DB_NAME:-app}
+      MYSQL_USER: ${DB_USER:?DB_USER 필요 / required}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 필요 / required}
+    volumes: ["dbdata:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped

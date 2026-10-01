@@ -1,0 +1,26 @@
+# {{PROJECT_NAME}} — 공통 정의 (make local-all | make prod-all)
+x-node-health: &node-health
+  interval: 10s
+  timeout: 3s
+  retries: 12
+services:
+  api:
+    build: { context: ., dockerfile: Dockerfile, target: runtime-api }
+    image: {{PROJECT_NAME}}-api:${APP_ENV:-local}
+    environment: { PORT: "4000" }
+    ports: ["${BIND_HOST:-127.0.0.1}:${API_PORT:-4000}:4000"]
+    volumes: ["appdata:/app/data"]
+    healthcheck:
+      <<: *node-health
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+  web:
+    build: { context: ., dockerfile: Dockerfile, target: runtime-web }
+    image: {{PROJECT_NAME}}-web:${APP_ENV:-local}
+    environment: { API_BASE: "http://api:4000" }
+    ports: ["${BIND_HOST:-127.0.0.1}:${WEB_PORT:-3000}:3000"]
+    depends_on: [api]
+    healthcheck:
+      <<: *node-health
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+volumes:
+  appdata:

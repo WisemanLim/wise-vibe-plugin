@@ -1,0 +1,103 @@
+id: cpp-cmake
+title: "C/C++ (CMake + vcpkg)"
+status: stable
+summary: >
+  극한 성능·하드웨어 밀착 계층의 표준. CMake 빌드 + vcpkg 의존성 + Drogon HTTP.
+  OS/드라이버·임베디드·HFT·게임엔진·AI 프레임워크 코어 등 다른 언어로
+  대체가 불가능하거나 비효율적인 영역을 커버.
+when_to_use:
+  - "나노초~마이크로초 응답속도가 필요한 HFT·저지연 트레이딩 시스템"
+  - "OS 커널·디바이스 드라이버·펌웨어·임베디드(MCU/RTOS)"
+  - "게임 엔진, 렌더링 파이프라인, 실시간 그래픽스"
+  - "C/C++ 기반 레거시 코드베이스(DB 엔진·브라우저·AI 프레임워크) 확장"
+  - "CUDA/ROCm 커널·BLAS/cuDNN 연동 고성능 연산 레이어"
+  - "ROS2 노드, ADAS/자율주행 모듈, MISRA-C 안전 표준 요구 시스템"
+avoid_when:
+  - "빠른 프로토타이핑·ML 실험·데이터 분석 → python-fastapi"
+  - "팀 C++ 숙련도 부족 + 일정 촉박 → go-gin 또는 rust-axum 검토"
+  - "메모리 안전성을 컴파일러가 보장해야 할 때 → rust-axum"
+  - "풀스택 웹·BFF → node-next-nest"
+
+languages:
+  primary: c-cpp
+  also: [cmake]
+
+package_managers:
+  default: vcpkg
+  allowed: [vcpkg, conan]
+  notes: >
+    vcpkg: CMake toolchain 통합, manifest 모드(vcpkg.json). VCPKG_ROOT 환경변수 필요.
+    Conan: CI 레이어 캐시 친화적, 대형 팀에서 선호. CMakePresets.json 과 함께 사용.
+
+layers:
+  frontend: null
+  backend:
+    framework: "Drogon (HTTP/WebSocket, async coroutine, 대안: cpp-httplib·Crow·Pistache)"
+    orm: "SQLiteCpp(local) / libpq(postgres) / Drogon 내장 ORM (대안: soci)"
+    runtime: "네이티브 OS 스레드 + Drogon trantor 이벤트루프"
+  database:
+    default: postgres
+    local: sqlite
+    prod_options: [postgres, mysql, mariadb, sqlite]           # wds-scaffold --db
+    cache: "redis (선택: --extras redis)"
+  ops:
+    ci: "GitHub Actions (ubuntu-latest + clang/gcc matrix)"
+    container: "Docker (multi-stage: ubuntu:24.04 dev/build → ubuntu:24.04 runtime, 동일 libstdc++) + Docker Compose (local/prod)"
+    deploy: "docker compose prod 모드 (make deploy) — K8s/Helm/Argo CD 는 확장 옵션"
+    quality: "clang-format + clang-tidy + ctest + AddressSanitizer/UBSan"
+  app: null
+
+run_methods:                     # docker compose 전용 (호스트 프로세스 매니저 없음)
+  container:
+    local: "make local-all   # docker-compose.yml + docker-compose.local.yml + .env.local (dev 스테이지)"
+    prod: "make prod-all     # docker-compose.yml + docker-compose.prod.yml + .env.prod (runtime 스테이지)"
+
+environments:                    # 모드 2종 / two modes
+  local: { db: sqlite,   compose: "docker-compose.yml + docker-compose.local.yml", notes: "dev 스테이지 · 소스 바인드 · SQLite 고정" }
+  prod:  { db: postgres, db_options: [postgres, mysql, mariadb, sqlite], compose: "docker-compose.yml + docker-compose.prod.yml", notes: "runtime 스테이지 · --db 로 RDBMS 선택 (기본 postgres)" }
+
+scaffold:                         # 정적 템플릿: wds-scaffold/assets/scaffold/cpp-cmake/
+  template: "cpp-cmake"
+  tree:
+    - ".github/workflows/"
+    - "src/"
+    - "test/dev-env/"
+    - "test/unit/"
+  files:
+    - ".clang-format"
+    - "CMakeLists.txt"
+    - "CMakePresets.json"
+    - "Dockerfile"
+    - "docker-compose.local.yml"
+    - "docker-compose.prod.yml"
+    - "docker-compose.yml"
+    - "src/health.cpp"
+    - "src/health.hpp"
+    - "src/main.cpp"
+    - "test/unit/health_test.cpp"
+    - "Makefile"
+    - ".env.local"
+    - ".env.prod"
+    - ".env.example"
+    - ".github/workflows/ci.yml"
+    - ".dockerignore"
+    - "README.md"
+    - "README.en.md"
+    - "test/dev-env/scenario.md"
+
+testing:
+  framework: "GTest + GMock (via vcpkg: gtest)"
+  dir: "test/"
+  dev_env: "test/dev-env/"
+  impl: "test/impl/<Nth>/"
+  cycle: "시나리오→빌드·진행→오류시 수정·재시험→결과작성 / scenario→build·run→fix&retest→result"
+
+makefile_targets:                 # 생성 Makefile (wds-scaffold assets/common/server.mk) 이 단일 기준
+  mode_family: "<mode>-all | -build | -logs | -stop | -restart | -ps  (mode = local | prod)"
+  db: "db-ping | db-shell | db-migrate | db-seed | db-reset | db-fresh  [ENV=local|prod]  (reset/fresh 는 local 전용)"
+  common: "preflight | test | shell | deploy | help"
+
+references:
+  - "C/C++ 필수 도메인: HFT·임베디드·OS·게임엔진·AI 프레임워크 코어·ROS2·ADAS"
+  - "CMake best practices: CMakePresets.json + vcpkg manifest mode (VCPKG_ROOT)"
+  - "Drogon: https://drogon.org — C++ 고성능 비동기 HTTP 프레임워크"

@@ -1,0 +1,65 @@
+id: hospitality
+title: "숙박·음식·여행 (Hospitality / O2O)"
+status: preview
+ksic_section: I
+ksic_divisions: [55, 56]
+classification:
+  isic: I
+  nace: I
+  naics: "72"
+summary: >
+  숙박·외식·여행 예약/주문(O2O). 예약 동시성·오버부킹 방지, 결제·정산, POS/KDS 연동,
+  피크 트래픽 대응이 핵심. 위치기반 검색과 모바일 주문이 주요 채널.
+
+keywords:
+  - 숙박 / hotel / accommodation / 예약 / booking
+  - 음식 / restaurant / 외식 / 배달 / delivery / O2O
+  - 여행 / travel / 관광 / POS / KDS
+  - 정산 / settlement / 리뷰 / review
+
+recommended_profiles:
+  - { id: node-next-nest, why: "예약/주문 포털·어드민, BFF, 실시간 가용성" }
+  - { id: go-gin,         why: "예약 동시성·재고(객실/좌석) 고처리량 코어, 멱등" }
+  - { id: react-native-app, why: "고객 주문/예약 모바일, 점주 POS 앱" }
+  - { id: python-fastapi, why: "수요예측·동적가격(RMS) ML, 추천" }
+
+stack_overrides:
+  database:   "PostgreSQL(예약 원장·재고), Redis(가용성 캐시·분산락)"
+  messaging:  "Kafka/Redis Streams (주문 이벤트·KDS 큐)"
+  search:     "위치기반 검색(PostGIS) + 검색엔진(상품/매장)"
+  payment:    "멱등 결제 + 정산/수수료 대사"
+
+korea_regulations:
+  - { name: "전자상거래법", impact: "예약/주문 청약철회·표시광고, 취소·환불 규정" }
+  - { name: "식품위생법", impact: "외식/배달 위생·원산지 표시 데이터" }
+  - { name: "관광진흥법", impact: "숙박/여행업 등록·표시 의무" }
+  - { name: "개인정보보호법(PIPA)", impact: "예약자 PII·결제정보 최소수집·암호화" }
+  - { name: "위치정보법", impact: "위치기반 검색/추천 동의·파기(6개월)" }
+
+global_compliance:
+  - "PCI-DSS (결제 카드)"
+  - "GDPR (해외 관광객 PII, 해당 시)"
+
+data_classes:
+  - { name: "예약/주문 원장", level: "무결성", note: "오버부킹 방지, 멱등" }
+  - { name: "결제/카드데이터", level: "규제대상", note: "PCI-DSS, 토큰화" }
+  - { name: "고객 PII·위치", level: "민감", note: "PIPA·위치정보법" }
+  - { name: "리뷰/평점", level: "운영", note: "조작 방지" }
+
+infra_patterns:
+  - "객실/좌석 재고 동시성 제어(분산락·낙관적 잠금) + 오버부킹 방지"
+  - "멱등 결제 + 정산/수수료 대사 잡"
+  - "피크 트래픽 버스트 스케일(예약 오픈·점심/저녁)"
+
+dev_env_special:
+  - "합성 예약/결제 데이터, 결제 샌드박스"
+  - "동시성 부하(오버부킹) 재현 시험 환경"
+
+testing_additions:
+  - "동시 예약 N건 → 재고 초과 0(오버부킹 방지)"
+  - "취소·환불 보상 트랜잭션 일관성"
+  - "멱등 결제: 중복 주문 1건만 반영"
+
+references:
+  - "https://www.law.go.kr/ (전자상거래법·관광진흥법·식품위생법)"
+  - "https://www.pcisecuritystandards.org/"

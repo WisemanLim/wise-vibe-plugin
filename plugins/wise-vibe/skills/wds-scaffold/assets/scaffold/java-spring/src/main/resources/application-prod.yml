@@ -1,0 +1,5 @@
+# prod 모드 = DB_ENGINE RDBMS ({{DB_ENGINE}}) — 드라이버/방언은 URL 로 자동 결정
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate

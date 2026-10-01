@@ -1,0 +1,28 @@
+# ===== Android / Kotlin / Gradle =====
+## Build
+*.apk
+*.aab
+*.ap_
+*.dex
+build/
+app/build/
+## Gradle
+.gradle/
+local.properties
+## Native build
+.cxx/
+## Android Studio / IntelliJ
+*.iml
+.navigation/
+captures/
+## Kotlin
+.kotlin/
+## 서명/시크릿 — 절대 커밋 금지 / never commit signing material
+*.jks
+*.keystore
+keystore.properties
+play-service-account*.json
+## Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png

@@ -1,0 +1,13 @@
+# id	kind	template	family	gitignore(공백구분)	app_svc	app_port	forced_db_image	title
+python-fastapi	service	python-fastapi	python	python	api	8000	-	Python 3.12 · FastAPI · uv · SQLAlchemy 2 + Alembic
+node-next-nest	service	node-next-nest	node	node	api	4000	-	Node 22 · pnpm · Next.js 15 (web) + NestJS 11 (api)
+go-gin	service	go-gin	generic	go	api	8080	-	Go 1.24 · Gin
+rust-axum	service	rust-axum	generic	rust	api	3000	-	Rust (stable) · Axum 0.8 · Tokio
+java-spring	service	java-spring	java	java	api	8080	-	Java 21 · Spring Boot 3 · Gradle · JPA
+csharp-dotnet	service	csharp-dotnet	csharp	csharp	api	8080	-	.NET 8 · ASP.NET Core Minimal API · EF Core
+cpp-cmake	service	cpp-cmake	generic	c-cpp	api	8080	-	C++20 · CMake · Ninja (의존성 없는 최소 HTTP 서버)
+bio-rag-research	service	python-fastapi	python	python node	api	8000	pgvector/pgvector:pg17	연구 RAG (python-fastapi 기반 + PostgreSQL pgvector + SECURITY.md)
+ios-swiftui	mobile	ios-swiftui	-	swift	-	-	-	iOS · Swift · SwiftUI
+android-compose	mobile	android-compose	-	android	-	-	-	Android · Kotlin · Jetpack Compose
+flutter-app	mobile	flutter-app	-	flutter	-	-	-	Flutter (Dart, iOS + Android)
+react-native-app	mobile	react-native-app	-	react-native node	-	-	-	React Native (Expo, TypeScript)

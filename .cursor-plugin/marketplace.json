@@ -1,0 +1,15 @@
+{
+  "name": "wise-vibe",
+  "owner": {
+    "name": "WisemanLim"
+  },
+  "metadata": {
+    "description": "wise-vibe — vibe coding 개발 표준 통합 마켓플레이스"
+  },
+  "plugins": [
+    {
+      "name": "wise-vibe",
+      "source": "plugins/wise-vibe"
+    }
+  ]
+}

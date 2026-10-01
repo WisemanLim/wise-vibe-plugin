@@ -1,0 +1,66 @@
+id: agriculture
+title: "농림어업·푸드테크 (Agri/AgriFood Tech)"
+status: preview
+ksic_section: A
+ksic_divisions: [1, 2, 3]
+classification:
+  isic: A
+  nace: A
+  naics: "11"
+summary: >
+  스마트팜·정밀농업·축산·수산 IoT. 센서/엣지 텔레메트리·시계열 수집과 위성/기상 데이터 결합,
+  이력추적(트레이서빌리티)·식품안전이 핵심. 통신 불안정 환경의 오프라인·엣지 우선 설계.
+
+keywords:
+  - 농업 / agriculture / farming / agritech
+  - 스마트팜 / smart farm / 정밀농업 / precision ag
+  - 축산 / livestock / 수산 / aquaculture / fishery
+  - 이력추적 / traceability / 식품안전 / food safety
+  - 기상 / weather / 위성 / satellite / GIS
+
+recommended_profiles:
+  - { id: go-gin,         why: "센서/엣지 텔레메트리 수집 고처리량, 단일 바이너리 엣지 배포" }
+  - { id: python-fastapi, why: "작황/수확량 예측 ML, 위성·기상 데이터 분석 API" }
+  - { id: react-native-app, why: "현장 농가/작업자 모바일(오프라인 우선)" }
+  - { id: node-next-nest, why: "유통/이력추적 포털·어드민" }
+
+stack_overrides:
+  database:   "PostgreSQL + TimescaleDB(센서 시계열), PostGIS(필지/GIS)"
+  messaging:  "MQTT (필드 디바이스), Kafka (수집 파이프라인)"
+  edge:       "엣지 게이트웨이(불안정 통신 대비 store-and-forward)"
+  observability: "디바이스 상태/배터리/통신 모니터링"
+
+korea_regulations:
+  - { name: "농수산물 이력추적관리(축산물이력법·식품이력추적)", impact: "생산-유통 단계 이력 데이터 보존·연계" }
+  - { name: "식품위생법·HACCP", impact: "식품 가공/유통 SW 안전관리 기록" }
+  - { name: "위치정보법", impact: "농기계/차량 위치 수집 시 동의·파기" }
+  - { name: "개인정보보호법(PIPA)", impact: "농가/작업자 PII 최소수집" }
+
+global_compliance:
+  - "GS1 (GTIN/EPCIS 이력추적 표준)"
+  - "ISO 22005 (food chain traceability)"
+  - "GLOBALG.A.P (수출 농산물)"
+
+data_classes:
+  - { name: "센서/텔레메트리", level: "운영", note: "시계열, 대량 적재" }
+  - { name: "필지/위치(GIS)", level: "제한", note: "위치정보법 연계 시 통제" }
+  - { name: "이력추적 기록", level: "무결성", note: "append-only, 위변조 방지" }
+  - { name: "농가/작업자 PII", level: "민감", note: "PIPA" }
+
+infra_patterns:
+  - "엣지 store-and-forward(오프라인 버퍼 → 복구 시 동기화)"
+  - "시계열 다운샘플링/리텐션 정책(TimescaleDB)"
+  - "GIS 공간 쿼리(PostGIS) + 위성/기상 외부 API 캐시"
+
+dev_env_special:
+  - "디바이스 시뮬레이터(가짜 센서 스트림)로 비프로드 시험"
+  - "간헐 연결/오프라인 시나리오 테스트 환경"
+
+testing_additions:
+  - "오프라인→재연결 시 텔레메트리 유실 0 검증"
+  - "이력추적 체인 무결성(단계 누락 없음) 검증"
+
+references:
+  - "https://www.law.go.kr/ (축산물이력법·식품이력추적관리)"
+  - "https://www.gs1.org/standards/epcis"
+  - "https://www.globalgap.org/"

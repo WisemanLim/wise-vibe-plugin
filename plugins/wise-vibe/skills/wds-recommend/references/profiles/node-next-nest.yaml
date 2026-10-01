@@ -1,0 +1,111 @@
+id: node-next-nest
+title: "Node (Next.js + NestJS)"
+status: stable
+summary: >
+  React 기반 풀스택. 프론트 Next.js(App Router), 백엔드 NestJS. 프론트-백엔드 언어 공유.
+when_to_use:
+  - "프론트-백엔드 언어를 TypeScript 로 통일하고 싶을 때"
+  - "BFF / API Gateway 가 필요할 때"
+  - "여러 팀이 협업하는 엔터프라이즈 API (DI/모듈화 필요)"
+avoid_when:
+  - "수치/ML/통계 연산이 핵심일 때 → python-fastapi"
+  - "초고동시성·저지연 코어 → go-gin 또는 rust-axum"
+
+languages:
+  primary: node
+  also: [typescript]
+
+package_managers:
+  default: pnpm
+  allowed: [pnpm, npm]
+  notes: "monorepo 는 pnpm workspaces 권장. yarn/bun 은 승인제. forever·PM2 등 호스트 프로세스 매니저 미사용 — 실행은 docker compose(local/prod)."
+
+layers:
+  frontend:
+    framework: "Next.js (App Router)"
+    ui: "React + TypeScript + Tailwind CSS"
+    state: "Redux Toolkit (대형) / Zustand (소형)"
+    test: "Vitest + Playwright"
+    docs: "Storybook"
+  backend:
+    framework: "NestJS"
+    orm: "Prisma"
+    rpc: "gRPC (optional)"
+  database:
+    default: postgres
+    local: sqlite
+    prod_options: [postgres, mysql, mariadb, sqlite]           # wds-scaffold --db
+    cache: "redis (선택: --extras redis)"
+  ops:
+    ci: "GitHub Actions (or GitLab CI)"
+    container: "Docker + Docker Compose"
+    deploy: "docker compose prod 모드 (make deploy) — K8s/Helm/Argo CD 는 확장 옵션"
+    quality: "SonarQube + Sentry"
+  app: null
+
+run_methods:                     # docker compose 전용 (호스트 프로세스 매니저 없음)
+  container:
+    local: "make local-all   # docker-compose.yml + docker-compose.local.yml + .env.local (dev 스테이지)"
+    prod: "make prod-all     # docker-compose.yml + docker-compose.prod.yml + .env.prod (runtime 스테이지)"
+
+environments:                    # 모드 2종 / two modes
+  local: { db: sqlite,   compose: "docker-compose.yml + docker-compose.local.yml", notes: "dev 스테이지 · 소스 바인드 · SQLite 고정" }
+  prod:  { db: postgres, db_options: [postgres, mysql, mariadb, sqlite], compose: "docker-compose.yml + docker-compose.prod.yml", notes: "runtime 스테이지 · --db 로 RDBMS 선택 (기본 postgres)" }
+
+scaffold:                         # 정적 템플릿: wds-scaffold/assets/scaffold/node-next-nest/
+  template: "node-next-nest"
+  tree:
+    - ".github/workflows/"
+    - "apps/api/"
+    - "apps/api/src/"
+    - "apps/api/test/"
+    - "apps/web/"
+    - "apps/web/app/"
+    - "apps/web/lib/"
+    - "apps/web/test/"
+    - "test/dev-env/"
+  files:
+    - "Dockerfile"
+    - "apps/api/nest-cli.json"
+    - "apps/api/package.json"
+    - "apps/api/src/app.module.ts"
+    - "apps/api/src/health.controller.ts"
+    - "apps/api/src/main.ts"
+    - "apps/api/test/health.test.ts"
+    - "apps/api/tsconfig.json"
+    - "apps/web/app/layout.tsx"
+    - "apps/web/app/page.tsx"
+    - "apps/web/lib/api.ts"
+    - "apps/web/next.config.mjs"
+    - "apps/web/package.json"
+    - "apps/web/test/api.test.ts"
+    - "apps/web/tsconfig.json"
+    - "docker-compose.local.yml"
+    - "docker-compose.prod.yml"
+    - "docker-compose.yml"
+    - "package.json"
+    - "pnpm-workspace.yaml"
+    - "Makefile"
+    - ".env.local"
+    - ".env.prod"
+    - ".env.example"
+    - ".github/workflows/ci.yml"
+    - ".dockerignore"
+    - "README.md"
+    - "README.en.md"
+    - "test/dev-env/scenario.md"
+
+testing:
+  framework: "Vitest (unit) + Playwright (e2e)"   # 시험 러너 / test runner
+  dir: "test/"                                     # test-runner 표준 / convention
+  dev_env: "test/dev-env/"                         # 표준 환경 검증 1회 / env verification, once
+  impl: "test/impl/<Nth>/"                         # 구현마다 / per implementation iteration
+  cycle: "시나리오→진행→오류시 수정·재시험→결과작성 / scenario→run→fix&retest→result"
+
+makefile_targets:                 # 생성 Makefile (wds-scaffold assets/common/server.mk) 이 단일 기준
+  mode_family: "<mode>-all | -build | -logs | -stop | -restart | -ps  (mode = local | prod)"
+  db: "db-ping | db-shell | db-migrate | db-seed | db-reset | db-fresh  [ENV=local|prod]  (reset/fresh 는 local 전용)"
+  common: "preflight | test | shell | deploy | help"
+
+references:
+  - "원본 §1 Frontend 표준 OSS, §2 Backend(Node/NestJS), §5 공통 스키마 backend.default-node"

@@ -1,0 +1,34 @@
+# ===== Flutter / Dart =====
+## Dart / Flutter tooling
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+.fvm/
+## Generated
+*.g.dart
+*.freezed.dart
+coverage/
+## pub cache
+.pub-cache/
+.pub/
+## iOS side (Flutter)
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/flutter_export_environment.sh
+ios/Runner/GeneratedPluginRegistrant.*
+ios/Runner/Runner.entitlements
+## Android side (Flutter)
+android/.gradle/
+android/app/build/
+android/local.properties
+android/key.properties
+## 서명/시크릿 — 절대 커밋 금지 / never commit signing material
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+AuthKey_*.p8

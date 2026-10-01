@@ -1,0 +1,7 @@
+# ===== Rust =====
+target/
+**/*.rs.bk
+*.pdb
+Cargo.lock~
+# rust-analyzer
+.rust-analyzer/

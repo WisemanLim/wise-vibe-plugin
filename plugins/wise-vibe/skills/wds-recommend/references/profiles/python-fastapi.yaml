@@ -1,0 +1,101 @@
+id: python-fastapi
+title: "Python (FastAPI)"
+status: stable
+summary: >
+  타입힌트 기반 FastAPI. uv 로 패키지/가상환경 관리, uvicorn 으로 구동. 데이터/ML/분석 API 표준.
+when_to_use:
+  - "데이터/ML/통계/ETL 분석 API"
+  - "빠른 개발 + 자동 OpenAPI 문서가 중요할 때"
+  - "Python 생태계(numpy/pandas/torch) 결합이 필요할 때"
+avoid_when:
+  - "프론트와 언어 공유가 우선 → node-next-nest"
+  - "초저지연 코어 서비스 → go-gin / rust-axum"
+
+languages:
+  primary: python
+  also: []
+
+package_managers:
+  default: uv
+  allowed: [uv, pip]
+  notes: "uv 1순위(빠른 resolver + venv). 레거시/제약 환경만 pip. requirements 대신 pyproject.toml + uv.lock."
+
+layers:
+  frontend: null
+  backend:
+    framework: "FastAPI"
+    server: "uvicorn (dev) / gunicorn+uvicorn-worker (prod)"
+    orm: "SQLAlchemy 2.x + Alembic"
+    validation: "Pydantic v2"
+  database:
+    default: postgres
+    local: sqlite
+    prod_options: [postgres, mysql, mariadb, sqlite]           # wds-scaffold --db
+    cache: "redis (선택: --extras redis)"
+  ops:
+    ci: "GitHub Actions (or GitLab CI)"
+    container: "Docker + Docker Compose"
+    deploy: "docker compose prod 모드 (make deploy) — K8s/Helm/Argo CD 는 확장 옵션"
+    quality: "ruff + pytest + SonarQube"
+  app: null
+
+run_methods:                     # docker compose 전용 (호스트 프로세스 매니저 없음)
+  container:
+    local: "make local-all   # docker-compose.yml + docker-compose.local.yml + .env.local (dev 스테이지)"
+    prod: "make prod-all     # docker-compose.yml + docker-compose.prod.yml + .env.prod (runtime 스테이지)"
+
+environments:                    # 모드 2종 / two modes
+  local: { db: sqlite,   compose: "docker-compose.yml + docker-compose.local.yml", notes: "dev 스테이지 · 소스 바인드 · SQLite 고정" }
+  prod:  { db: postgres, db_options: [postgres, mysql, mariadb, sqlite], compose: "docker-compose.yml + docker-compose.prod.yml", notes: "runtime 스테이지 · --db 로 RDBMS 선택 (기본 postgres)" }
+
+scaffold:                         # 정적 템플릿: wds-scaffold/assets/scaffold/python-fastapi/
+  template: "python-fastapi"
+  tree:
+    - ".github/workflows/"
+    - "app/"
+    - "app/core/"
+    - "migrations/"
+    - "migrations/versions/"
+    - "test/"
+    - "test/dev-env/"
+  files:
+    - "Dockerfile"
+    - "alembic.ini"
+    - "app/__init__.py"
+    - "app/core/__init__.py"
+    - "app/core/config.py"
+    - "app/db.py"
+    - "app/main.py"
+    - "app/seed.py"
+    - "docker-compose.local.yml"
+    - "docker-compose.prod.yml"
+    - "docker-compose.yml"
+    - "migrations/env.py"
+    - "migrations/script.py.mako"
+    - "migrations/versions/.gitkeep"
+    - "pyproject.toml"
+    - "test/test_health.py"
+    - "Makefile"
+    - ".env.local"
+    - ".env.prod"
+    - ".env.example"
+    - ".github/workflows/ci.yml"
+    - ".dockerignore"
+    - "README.md"
+    - "README.en.md"
+    - "test/dev-env/scenario.md"
+
+testing:
+  framework: "pytest (+ httpx for API)"            # 시험 러너 / test runner
+  dir: "test/"                                     # test-runner 표준 / convention
+  dev_env: "test/dev-env/"                         # 표준 환경 검증 1회 / env verification, once
+  impl: "test/impl/<Nth>/"                         # 구현마다 / per implementation iteration
+  cycle: "시나리오→진행→오류시 수정·재시험→결과작성 / scenario→run→fix&retest→result"
+
+makefile_targets:                 # 생성 Makefile (wds-scaffold assets/common/server.mk) 이 단일 기준
+  mode_family: "<mode>-all | -build | -logs | -stop | -restart | -ps  (mode = local | prod)"
+  db: "db-ping | db-shell | db-migrate | db-seed | db-reset | db-fresh  [ENV=local|prod]  (reset/fresh 는 local 전용)"
+  common: "preflight | test | shell | deploy | help"
+
+references:
+  - "원본 §2 Backend(FastAPI), §4 기술스택표준(분석 API: FastAPI/uv/uvicorn), §5 backend.default-python"

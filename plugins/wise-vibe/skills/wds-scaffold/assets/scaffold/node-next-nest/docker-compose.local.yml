@@ -1,0 +1,23 @@
+# {{PROJECT_NAME}} — local 모드: SQLite + dev 스테이지(nest --watch / next dev) + 소스 바인드
+services:
+  api:
+    build: { target: dev }
+    env_file: [".env.local"]
+    command: ["pnpm", "--filter", "./apps/api", "dev"]
+    volumes: &src
+      - ./:/app
+      - node_modules:/app/node_modules
+      - api_node_modules:/app/apps/api/node_modules
+      - web_node_modules:/app/apps/web/node_modules
+      - appdata:/app/data
+    healthcheck: { start_period: 120s }
+  web:
+    build: { target: dev }
+    env_file: [".env.local"]
+    command: ["pnpm", "--filter", "./apps/web", "dev"]
+    volumes: *src
+    healthcheck: { start_period: 180s }
+volumes:
+  node_modules:
+  api_node_modules:
+  web_node_modules:

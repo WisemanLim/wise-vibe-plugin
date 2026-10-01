@@ -1,0 +1,17 @@
+# ===== C / C++ =====
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.gch
+*.pch
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+compile_commands.json
+.ninja_deps
+.ninja_log

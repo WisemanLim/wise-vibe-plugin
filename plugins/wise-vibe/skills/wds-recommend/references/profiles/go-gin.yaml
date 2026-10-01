@@ -1,0 +1,87 @@
+id: go-gin
+title: "Go (Gin)"
+status: stable
+summary: >
+  경량·고성능 Gin HTTP 프레임워크. 고동시성 코어 서비스, 큐 소비자, 워커에 적합.
+when_to_use:
+  - "고처리량·저지연 코어 서비스"
+  - "단순 배포(단일 바이너리)가 중요할 때"
+  - "큐 소비자 / 재색인 워커"
+avoid_when:
+  - "풍부한 ML/데이터 라이브러리 필요 → python-fastapi"
+  - "메모리 안전·극한 성능 보장 → rust-axum"
+
+languages:
+  primary: go
+  also: []
+
+package_managers:
+  default: "go modules"
+  allowed: ["go modules"]
+  notes: "go.mod / go.sum. 빌드 진입점은 Makefile 로 추상화."
+
+layers:
+  frontend: null
+  backend:
+    framework: "Gin (대안: Echo / Fiber)"
+    orm: "GORM"
+    rpc: "gRPC (optional)"
+  database:
+    default: postgres
+    local: sqlite
+    prod_options: [postgres, mysql, mariadb, sqlite]           # wds-scaffold --db
+    cache: "redis (선택: --extras redis)"
+  ops:
+    ci: "GitHub Actions (or GitLab CI)"
+    container: "Docker (multi-stage) + Docker Compose"
+    deploy: "docker compose prod 모드 (make deploy) — K8s/Helm/Argo CD 는 확장 옵션"
+    quality: "golangci-lint + go test + SonarQube"
+  app: null
+
+run_methods:                     # docker compose 전용 (호스트 프로세스 매니저 없음)
+  container:
+    local: "make local-all   # docker-compose.yml + docker-compose.local.yml + .env.local (dev 스테이지)"
+    prod: "make prod-all     # docker-compose.yml + docker-compose.prod.yml + .env.prod (runtime 스테이지)"
+
+environments:                    # 모드 2종 / two modes
+  local: { db: sqlite,   compose: "docker-compose.yml + docker-compose.local.yml", notes: "dev 스테이지 · 소스 바인드 · SQLite 고정" }
+  prod:  { db: postgres, db_options: [postgres, mysql, mariadb, sqlite], compose: "docker-compose.yml + docker-compose.prod.yml", notes: "runtime 스테이지 · --db 로 RDBMS 선택 (기본 postgres)" }
+
+scaffold:                         # 정적 템플릿: wds-scaffold/assets/scaffold/go-gin/
+  template: "go-gin"
+  tree:
+    - ".github/workflows/"
+    - "cmd/server/"
+    - "test/dev-env/"
+  files:
+    - "Dockerfile"
+    - "cmd/server/main.go"
+    - "cmd/server/main_test.go"
+    - "docker-compose.local.yml"
+    - "docker-compose.prod.yml"
+    - "docker-compose.yml"
+    - "go.mod"
+    - "Makefile"
+    - ".env.local"
+    - ".env.prod"
+    - ".env.example"
+    - ".github/workflows/ci.yml"
+    - ".dockerignore"
+    - "README.md"
+    - "README.en.md"
+    - "test/dev-env/scenario.md"
+
+testing:
+  framework: "go test (+ testify, httptest)"       # 시험 러너 / test runner
+  dir: "test/"                                     # test-runner 표준 / convention
+  dev_env: "test/dev-env/"                         # 표준 환경 검증 1회 / env verification, once
+  impl: "test/impl/<Nth>/"                         # 구현마다 / per implementation iteration
+  cycle: "시나리오→진행→오류시 수정·재시험→결과작성 / scenario→run→fix&retest→result"
+
+makefile_targets:                 # 생성 Makefile (wds-scaffold assets/common/server.mk) 이 단일 기준
+  mode_family: "<mode>-all | -build | -logs | -stop | -restart | -ps  (mode = local | prod)"
+  db: "db-ping | db-shell | db-migrate | db-seed | db-reset | db-fresh  [ENV=local|prod]  (reset/fresh 는 local 전용)"
+  common: "preflight | test | shell | deploy | help"
+
+references:
+  - "원본 §2 Backend(Gin/GORM), §5 backend.default-go"

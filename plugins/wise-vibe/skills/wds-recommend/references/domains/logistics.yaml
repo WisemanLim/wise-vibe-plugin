@@ -1,0 +1,72 @@
+id: logistics
+title: "운수·물류·모빌리티 (Logistics / Mobility)"
+status: stable
+ksic_section: H
+ksic_divisions: [49, 50, 51, 52, 53]
+classification:
+  isic: H
+  nace: H
+  naics: "48-49"
+summary: >
+  운송/창고/배송/모빌리티. 지리공간(PostGIS) + 실시간 위치추적 + 텔레메트리 스트리밍이 핵심.
+  위치정보법이 1순위 규제 — 개인위치정보는 동의·최소수집·보유기간(통상 6개월) 자동파기.
+
+keywords:
+  - 물류 / logistics / 배송 / delivery / 운송 / transport
+  - 모빌리티 / mobility / 택시 / 차량 / fleet
+  - 위치 / location / GPS / 추적 / tracking
+  - 창고 / warehouse / 라스트마일 / routing
+
+recommended_profiles:
+  - { id: go-gin,         why: "고처리량 위치/텔레메트리 수집, 실시간 추적" }
+  - { id: python-fastapi, why: "경로최적화·ETA ML, 지리공간 파이프라인" }
+  - { id: node-next-nest, why: "관제/배차 어드민, 실시간 대시보드(WebSocket)" }
+  - { id: rust-axum,      why: "초저지연 매칭/엣지 텔레메트리 게이트웨이" }
+
+stack_overrides:
+  geospatial: "PostgreSQL + PostGIS(경로/존/폴리곤), Redis Geo(GEOADD/GEORADIUS 근접질의)"
+  timeseries: "TimescaleDB/InfluxDB (대량 위치 핑 시계열)"
+  streaming:  "Apache Kafka(텔레메트리 firehose), AWS SQS(오프라인 버퍼링)"
+  realtime:   "Redis Pub/Sub → WebSocket fan-out (sub-second 추적)"
+  maps:       "Mapbox GL JS / Google Maps WebGL (수백 라이브 마커)"
+  iot:        "AWS IoT Core(텔레매틱스 인제스트), GPS+차량파라미터"
+
+korea_regulations:
+  - { name: "위치정보법", since: "2022-04-20 등록제", impact: "개인위치정보 동의(목적·기간), 처리방침 공개, 6개월 보유 후 파기, LBS 등록 게이팅" }
+  - { name: "화물자동차운수사업법", since: "2026-01-01 시행조항", impact: "운송허가/차량 검증, 배차 적격성, 운송기록 보존" }
+  - { name: "개인정보보호법(PIPA)", impact: "기사/수령인 PII + 위치 결합 시 암호화·접근로그 강화" }
+  - { name: "정보통신망법", impact: "추적링크/푸시 알림 동의" }
+
+global_compliance:
+  - "GDPR (위치=개인정보, 최소화/DSR, EU 운영)"
+  - "PCI-DSS (요금/배송 결제 처리 시)"
+
+data_classes:
+  - { name: "개인위치정보", level: "규제대상", note: "위치정보법 최고민감, 6개월 TTL 파기" }
+  - { name: "운송/배송 주문정보", level: "민감", note: "수령정보" }
+  - { name: "차량·기사 텔레메트리", level: "민감", note: "속도·연료·상태" }
+  - { name: "PII(기사/수령인)", level: "민감", note: "PIPA" }
+
+infra_patterns:
+  - "지리공간 DB(PostGIS) + 시계열(TimescaleDB) + Redis Geo 핫패스 근접질의"
+  - "이벤트 스트리밍(Kafka) 텔레메트리 + SQS at-least-once 오프라인 전달"
+  - "실시간 추적(Pub/Sub→WebSocket) sub-second 업데이트"
+  - "위치 보유기간 TTL(6개월) 데이터레이어에 내장"
+
+dev_env_special:
+  - "비프로드 위치데이터 마스킹/비식별, 합성 GPS 궤적 테스트"
+  - "지리공간 질의 테스트 픽스처(PostGIS), 경로정확성 테스트"
+  - "고처리량 텔레메트리 부하/스파이크(Kafka 인제스트)"
+  - "동의+보유파기 통합 테스트(위치정보법 6개월), WebSocket 지연 soak"
+
+testing_additions:
+  - "위치 보유기간 6개월 경과 자동파기 검증"
+  - "근접질의 정확도(GEORADIUS) + 경로계산 정확성"
+  - "오프라인 기사 재접속 시 위치 이벤트 손실 없음(SQS)"
+
+references:
+  - "https://www.law.go.kr/LSW/lsInfoP.do?lsiSeq=206086 (위치정보법)"
+  - "https://easylaw.go.kr/CSP/CnpClsMain.laf?popMenu=ov&csmSeq=1702&ccfNo=2&cciNo=1&cnpClsNo=1"
+  - "https://www.law.go.kr/LSW//lsInfoP.do?lsId=001748 (화물자동차운수사업법)"
+  - "https://www.instaclustr.com/education/apache-kafka/kafka-for-iot-4-key-capabilities-and-top-use-cases-in-2025/"
+  - "https://webridge.co/tech-stack/logistics-tech-stack"

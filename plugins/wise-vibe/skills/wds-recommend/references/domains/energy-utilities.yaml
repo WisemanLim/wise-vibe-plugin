@@ -1,0 +1,64 @@
+id: energy-utilities
+title: "전기·가스·수도·환경 (Energy & Utilities)"
+status: preview
+ksic_section: D
+ksic_divisions: [35, 36, 37, 38, 39]
+classification:
+  isic: D
+  nace: D
+  naics: "22"
+summary: >
+  전력/가스/수도/폐기물 등 유틸리티·에너지. SCADA/OT 텔레메트리, 스마트미터(AMI) 계량,
+  수요반응(DR)·재생에너지 예측이 핵심. 국가기반시설 보안과 OT/IT 분리가 최우선.
+  (KSIC D=전기·가스·증기, E=수도·하수·폐기물·환경복원 통합 오버레이)
+
+keywords:
+  - 전력 / electricity / 에너지 / energy / grid
+  - 가스 / gas / 수도 / water / 폐기물 / waste
+  - 스마트미터 / smart meter / AMI / SCADA / OT
+  - 수요반응 / demand response / 재생에너지 / renewable
+
+recommended_profiles:
+  - { id: rust-axum,      why: "SCADA/OT 게이트웨이 메모리안전·고신뢰, 제어 인접" }
+  - { id: go-gin,         why: "AMI 계량 텔레메트리 대량 수집·집계 코어" }
+  - { id: python-fastapi, why: "수요예측·재생에너지 발전량 ML, 분석 API" }
+  - { id: node-next-nest, why: "운영 대시보드·고객 포털" }
+
+stack_overrides:
+  database:   "PostgreSQL + TimescaleDB(계량/센서 시계열)"
+  messaging:  "MQTT/OPC-UA (필드/OT), Kafka (수집 파이프라인)"
+  network:    "OT/IT 망분리(일방향 게이트웨이/데이터다이오드 고려)"
+  observability: "그리드/설비 상태·이상감지 + SIEM"
+
+korea_regulations:
+  - { name: "정보통신기반보호법(주요정보통신기반시설)", impact: "국가기반시설 취약점분석·보호대책 의무" }
+  - { name: "전기사업법·전력시장규칙", impact: "계량/정산 데이터 정확성·보존" }
+  - { name: "지능형전력망법(스마트그리드)", impact: "AMI/DR 데이터 보안·개인정보" }
+  - { name: "개인정보보호법(PIPA)", impact: "계량 데이터 가구 식별성 → 가명·통제" }
+
+global_compliance:
+  - "IEC 62443 (OT/산업제어 보안)"
+  - "IEC 62351 (전력시스템 통신 보안)"
+  - "NERC CIP (해외 전력 기반시설, 해당 시)"
+
+data_classes:
+  - { name: "SCADA/OT 제어", level: "규제대상", note: "기반시설, 격리·무결성 최우선" }
+  - { name: "계량/AMI 데이터", level: "민감", note: "가구 식별 가능 → 가명/집계" }
+  - { name: "설비/그리드 텔레메트리", level: "무결성", note: "시계열, 이상감지" }
+
+infra_patterns:
+  - "OT/IT 망분리 + 일방향 전송(데이터다이오드) 고려"
+  - "AMI 시계열 대량 적재·집계(TimescaleDB) + 리텐션"
+  - "기반시설 이상감지·침입탐지(IEC 62443 세분화 영역/도관)"
+
+dev_env_special:
+  - "OT 프로토콜(OPC-UA/Modbus) 시뮬레이터로 비프로드 시험(실 제어망 격리)"
+  - "합성 계량 데이터(실 가구 데이터 반입 금지)"
+
+testing_additions:
+  - "OT 게이트웨이 장애 시 안전상태(fail-safe) 전이 검증"
+  - "계량 집계 정확도·정산 데이터 무결성 검증"
+
+references:
+  - "https://www.law.go.kr/ (정보통신기반보호법·전기사업법·지능형전력망법)"
+  - "https://www.iec.ch/ (IEC 62443, IEC 62351)"

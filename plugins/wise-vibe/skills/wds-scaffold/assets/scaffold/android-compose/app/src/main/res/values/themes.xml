@@ -1,0 +1,4 @@
+<resources>
+    <!-- Material3 DayNight, Compose uses this as window background -->
+    <style name="Theme.App" parent="Theme.Material3.DayNight.NoActionBar" />
+</resources>

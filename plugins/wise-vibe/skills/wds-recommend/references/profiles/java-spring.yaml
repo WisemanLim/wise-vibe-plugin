@@ -1,0 +1,98 @@
+id: java-spring
+title: "Java (Spring Boot)"
+status: stable
+summary: >
+  엔터프라이즈 표준 Java 백엔드. Spring Boot 3 + JPA + 검증된 생태계.
+  ERP·금융·공공 시스템, 레거시 Java 연동, 대형 팀 협업에 적합.
+when_to_use:
+  - "Java 생태계·레거시 연동이 필수일 때"
+  - "엔터프라이즈 ERP·금융·공공 백엔드"
+  - "팀이 Java에 익숙하고 Spring 생태계(JPA, Security, Batch)가 필요할 때"
+  - "대형 팀 협업 및 오랜 유지보수가 예상될 때"
+avoid_when:
+  - "새 서비스이고 팀이 Go/Node에 익숙 → go-gin / node-next-nest"
+  - "ML/데이터 파이프라인 → python-fastapi"
+  - "초고동시성·저지연 → rust-axum / go-gin"
+  - "단일 바이너리 배포가 중요 → go-gin"
+
+languages:
+  primary: java
+  also: []
+
+package_managers:
+  default: gradle
+  allowed: [gradle, maven]
+  notes: "Gradle Kotlin DSL (build.gradle.kts) 권장. Maven 도 허용. 빌드는 Makefile 로 추상화."
+
+layers:
+  frontend: null
+  backend:
+    framework: "Spring Boot 3 (Web MVC)"
+    orm: "Spring Data JPA (Hibernate + PostgreSQL)"
+    rpc: "gRPC (optional)"
+  database:
+    default: postgres
+    local: h2
+    cache: "redis (선택: --extras redis)"
+  ops:
+    ci: "GitHub Actions (or GitLab CI)"
+    container: "Docker (multi-stage) + Docker Compose"
+    deploy: "docker compose prod 모드 (make deploy) — K8s/Helm/Argo CD 는 확장 옵션"
+    quality: "Checkstyle + JUnit 5 + SonarQube"
+  app: null
+
+run_methods:                     # docker compose 전용 (호스트 프로세스 매니저 없음)
+  container:
+    local: "make local-all   # docker-compose.yml + docker-compose.local.yml + .env.local (dev 스테이지)"
+    prod: "make prod-all     # docker-compose.yml + docker-compose.prod.yml + .env.prod (runtime 스테이지)"
+
+environments:                    # 모드 2종 / two modes
+  local: { db: sqlite,   compose: "docker-compose.yml + docker-compose.local.yml", notes: "dev 스테이지 · 소스 바인드 · SQLite 고정" }
+  prod:  { db: postgres, db_options: [postgres, mysql, mariadb, sqlite], compose: "docker-compose.yml + docker-compose.prod.yml", notes: "runtime 스테이지 · --db 로 RDBMS 선택 (기본 postgres)" }
+
+scaffold:                         # 정적 템플릿: wds-scaffold/assets/scaffold/java-spring/
+  template: "java-spring"
+  tree:
+    - ".github/workflows/"
+    - "src/main/java/com/example/app/"
+    - "src/main/resources/"
+    - "src/test/java/com/example/app/"
+    - "test/dev-env/"
+  files:
+    - "Dockerfile"
+    - "build.gradle.kts"
+    - "docker-compose.local.yml"
+    - "docker-compose.prod.yml"
+    - "docker-compose.yml"
+    - "settings.gradle.kts"
+    - "src/main/java/com/example/app/Application.java"
+    - "src/main/java/com/example/app/HealthController.java"
+    - "src/main/resources/application-local.yml"
+    - "src/main/resources/application-prod.yml"
+    - "src/main/resources/application-sqlite.yml"
+    - "src/main/resources/application.yml"
+    - "src/test/java/com/example/app/HealthControllerTest.java"
+    - "Makefile"
+    - ".env.local"
+    - ".env.prod"
+    - ".env.example"
+    - ".github/workflows/ci.yml"
+    - ".dockerignore"
+    - "README.md"
+    - "README.en.md"
+    - "test/dev-env/scenario.md"
+
+testing:
+  framework: "JUnit 5 (unit) + Spring Boot Test / MockMvc (통합)"
+  dir: "test/"
+  dev_env: "test/dev-env/"
+  impl: "test/impl/<Nth>/"
+  cycle: "시나리오→진행→오류시 수정·재시험→결과작성 / scenario→run→fix&retest→result"
+
+makefile_targets:                 # 생성 Makefile (wds-scaffold assets/common/server.mk) 이 단일 기준
+  mode_family: "<mode>-all | -build | -logs | -stop | -restart | -ps  (mode = local | prod)"
+  db: "db-ping | db-shell | db-migrate | db-seed | db-reset | db-fresh  [ENV=local|prod]  (reset/fresh 는 local 전용)"
+  common: "preflight | test | shell | deploy | help"
+
+references:
+  - "Spring Boot 3.3 LTS, Spring Data JPA, Gradle 8, eclipse-temurin:21"

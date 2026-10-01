@@ -1,0 +1,18 @@
+# wise-vibe-plugin 저장소 자체용 (생성 프로젝트용 규칙은 skills/wds-scaffold/assets/gitignore/)
+# 주의: plugins/** 아래 템플릿(.env.local, .env.prod, build 스크립트 등)은 무시하면 안 된다.
+.DS_Store
+._*
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*~
+.omc/
+.claude/settings.local.json
+
+# 플러그인 자체 테스트 산출물
+/tests/.out/
+/.wds/
+*.log
+__pycache__/

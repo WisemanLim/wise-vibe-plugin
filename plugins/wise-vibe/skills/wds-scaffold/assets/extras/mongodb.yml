@@ -1,0 +1,12 @@
+# extras/mongodb — 선택 인프라 (scaffold --extras mongodb). make 가 compose/*.yml 을 자동 포함한다.
+services:
+  mongodb:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-app}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-app}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-app}
+    ports: ["${BIND_HOST:-127.0.0.1}:${MONGODB_PORT:-27017}:27017"]
+    volumes: ["mongodata:/data/db"]
+volumes:
+  mongodata:

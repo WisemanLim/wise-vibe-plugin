@@ -1,0 +1,63 @@
+# 트렌드 캐시 / Trends cache — 버전 핀 + 업종 규제 시행일
+# --trends 사용 시 stack-advisor/recommend 가 이 파일을 먼저 읽고, stale(아래 정책) 일 때만 WebSearch 로 재확인한다.
+# This file pins framework/runtime versions and regulation effective dates so `--trends` reads cache first
+# and only WebSearches when stale. Refresh via: scripts/refresh-trends.sh
+#
+# 주의 / NOTE: 값은 시드(2026 초 기준 합리적 추정)이며 "verify: true" 항목은 --trends 시 재확인 대상.
+# Values are seeds; entries marked verify:true should be re-checked by --trends.
+
+meta:
+  last_updated: "2026-06-05"
+  ttl_days: 90                    # 이 기간 지나면 stale → WebSearch 권장 / staleness window
+  source: "manual (2026-06-05)"
+  note: "정규 갱신은 분기 1회 권장. 규제는 수시 변동 — since 임박 항목 우선 재확인."
+
+# ── 런타임/언어 LTS·안정 버전 / runtime & language ──────────────────────────
+runtimes:
+  node:   { lts: "22", current: "24", note: "LTS 22 권장(corepack pnpm 은 Node ≥22.13)", verify: true }
+  python: { stable: "3.13", widely_used: "3.12", note: "신규 3.13, 라이브러리 호환 시 3.12", verify: true }
+  go:     { stable: "1.24", note: "최신 stable", verify: true }
+  rust:   { stable: "1.85", note: "edition 2024", verify: true }
+  dart:   { stable: "3.6", note: "Flutter 동봉 SDK", verify: true }
+  kotlin: { stable: "2.1", note: "K2 컴파일러", verify: true }
+  swift:  { stable: "6.0", note: "Swift 6 동시성", verify: true }
+  java:   { lts: "21", note: "LTS 21 권장 (Spring Boot 3.x 기준)", verify: true }
+  csharp: { stable: "12", dotnet_lts: "8.0", note: ".NET 8 LTS", verify: true }
+  cpp:    { standard: "C++20", cmake_min: "3.28", note: "C++20 + CMake presets", verify: true }
+
+# ── 프레임워크 메이저 핀 / framework majors (profiles/*.yaml 과 연동) ─────────
+frameworks:
+  next:        { major: "15", profile: node-next-nest, verify: true }
+  nestjs:      { major: "11", profile: node-next-nest, verify: true }
+  fastapi:     { major: "0.115+", profile: python-fastapi, verify: true }
+  gin:         { major: "1.10", profile: go-gin, verify: true }
+  axum:        { major: "0.8", profile: rust-axum, verify: true }
+  flutter:     { major: "3.27+", profile: flutter-app, verify: true }
+  expo_sdk:    { major: "52", react_native: "0.77", profile: react-native-app, verify: true }
+  compose_bom: { major: "2025.x", profile: android-compose, verify: true }
+  spring_boot: { major: "3.4", profile: java-spring, verify: true }
+  aspnet_core: { major: "8.0", profile: csharp-dotnet, verify: true }
+  drogon:      { major: "1.9", profile: cpp-cmake, verify: true }
+
+datastores:
+  postgres: { major: "17", verify: true }
+  redis:    { major: "7.4", verify: true }
+
+# ── 업종 규제 시행일 인덱스 / regulation effective dates (domains/*.yaml 의 since 미러) ──
+# recommend --trends 시 since 가 오늘에 임박/경과한 항목을 우선 재확인하도록 한다.
+regulations:
+  finance:
+    - { name: "전자금융감독규정(개정)", since: "2025-02-05", verify: true }
+    - { name: "마이데이터(MyData 2.0)", since: "2025-06-19", verify: true }
+    - { name: "재해복구센터(DR/BCP)", since: "2026 단계적", verify: true }
+    - { name: "PCI-DSS 4.0.1 전면 의무", since: "2025-03-31", verify: true }
+  healthcare:
+    - { name: "의료법/EMR 인증·SaMD(IEC 62304)", since: "상시", verify: true }
+  commerce:
+    - { name: "PCI-DSS 4.0.1", since: "2025-03-31", verify: true }
+  govtech:
+    - { name: "N2SF/CSAP·KWCAG 2.2", since: "상시", verify: true }
+  media-gaming:
+    - { name: "게임산업법 확률정보 공개", since: "2024-03-22", verify: true }
+  energy-utilities:
+    - { name: "정보통신기반보호법(기반시설)", since: "상시", verify: true }

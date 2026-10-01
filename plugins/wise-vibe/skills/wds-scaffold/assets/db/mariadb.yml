@@ -1,0 +1,14 @@
+  db:
+    image: ${DB_IMAGE:-mariadb:11.4}
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD 필요 / required}
+      MARIADB_DATABASE: ${DB_NAME:-app}
+      MARIADB_USER: ${DB_USER:?DB_USER 필요 / required}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 필요 / required}
+    volumes: ["dbdata:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped

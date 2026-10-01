@@ -1,0 +1,88 @@
+id: flutter-app
+title: "Flutter (Dart, cross-platform)"
+kind: mobile
+status: stable
+summary: >
+  Dart + Flutter 단일 코드베이스로 iOS·Android 동시 빌드. Riverpod 상태관리, Dio API,
+  Drift(SQLite) 온디바이스 저장. 디자인 일관성·고성능 커스텀 UI 에 강함.
+when_to_use:
+  - "iOS·Android 를 단일 코드베이스로 빠르게 출시"
+  - "픽셀 단위 디자인 일관성·커스텀 애니메이션 UI"
+  - "팀이 Dart/Flutter 자산을 보유"
+avoid_when:
+  - "OS 최신 API 즉시 채택·순수 네이티브 성능 극한 → ios-swiftui / android-compose"
+  - "기존 React/JS 팀 자산 재활용 → react-native-app"
+
+platforms: [ios, android]
+
+languages:
+  primary: dart
+  also: []
+
+package_managers:
+  default: pub
+  allowed: [pub]
+  notes: "flutter pub. Flutter SDK 버전은 fvm 으로 핀 권장. pubspec.lock 커밋."
+
+layers:
+  frontend:
+    framework: "Flutter (Material 3 / Cupertino)"
+    state: "Riverpod (대형) / Provider (소형)"
+    navigation: "go_router"
+    test: "flutter test (unit/widget) + integration_test"
+  backend: null
+  database:
+    local_store: "Drift (SQLite) 또는 Hive/Isar"
+    remote: "REST/GraphQL via Dio (페어링 백엔드: 별도 서버 프로파일)"
+  ops:
+    ci: "GitHub Actions (iOS 빌드는 macOS 러너) + Fastlane"
+    signing: "iOS: match / App Store Connect API key · Android: keystore(Play)"
+    deploy: "Fastlane → TestFlight / Play(internal track)"
+    quality: "flutter analyze + dart format"
+  app: "Flutter (iOS + Android)"
+
+run_methods:
+  simulator: "flutter run            # 연결된 시뮬레이터/에뮬레이터 자동 선택"
+  ios: "flutter run -d ios           # Xcode iOS Simulator"
+  android: "flutter run -d android   # Android Emulator"
+  release: "flutter build ipa / flutter build appbundle"
+
+environments:                    # 모드 2종 = 빌드 플레이버 / two modes = build flavors
+  local: { flavor: local,     api_base: "http://localhost:8000",  signing: debug,   notes: "시뮬레이터/에뮬레이터, 디버그 서명" }
+  prod:  { flavor: prod,    api_base: "https://api.example",     signing: release, notes: "App Store / Play 프로덕션" }
+
+scaffold:
+  tree:
+    - "lib/"
+    - "lib/features/"
+    - "lib/core/"
+    - "test/"
+    - "integration_test/"
+    - "fastlane/"
+    - ".github/workflows/"
+  files:
+    - "pubspec.yaml"
+    - "lib/main.dart"
+    - "lib/core/env.dart"
+    - "Makefile"
+    - "fastlane/Fastfile"
+    - ".env.local"
+    - ".github/workflows/ci.yml"
+
+testing:
+  framework: "flutter test (unit/widget) + integration_test (+ Maestro e2e optional)"
+  dir: "test/"                                     # 시험표준 증빙(scenario/result/logs). *_test.dart 와 공존(러너가 .md 무시)
+  dev_env: "test/dev-env/"                         # SDK/툴체인 확인 + 시뮬레이터 부팅 + 디버그 빌드 성공
+  impl: "test/impl/<Nth>/"                         # 구현마다
+  cycle: "시나리오→빌드·실행→오류시 수정·재시험→결과작성 / scenario→build&run→fix&retest→result"
+
+makefile_targets:                 # 공통 진입점 — 모든 환경 동일 네이밍 (템플릿 Makefile 이 단일 기준)
+  run: "setup(ios/android) | local-all(시뮬레이터/에뮬레이터 실행) | local-stop"
+  build: "local-build | prod-build  (xcconfig / flavor / dart-define / eas profile)"
+  common: "test | deploy | help"
+  test: "flutter test && flutter analyze"
+  deploy: "fastlane ios beta / fastlane android beta (TestFlight/Play)"
+
+references:
+  - "원본 §4 App(Flutter/React Native + Fastlane + Firebase)"
+  - ".ref-doc Perplexity-Cli로 ios app을 testflight 배포 (Fastlane/CLI 배포 절차)"
