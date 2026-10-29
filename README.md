@@ -16,7 +16,8 @@ PRD(기획 문서 PDF·Markdown 여러 개도 가능)만 있으면 **스택·DB 
 | PRD 입력 | 설문 | 설문 + **여러 문서(`a.pdf a-ui-design.pdf …`)** — 역할 추정·출처 표기 |
 | 환경 | local/dev/staging/prod, env-init 별도 | **local / prod 2모드**, env-init 은 scaffold 에 흡수 |
 | 실행 | 호스트 프로세스 매니저(PM2·honcho·goreman·overmind) + compose | **docker compose 전용** (dev/runtime 이미지 스테이지) |
-| DB | local SQLite / 그 외 PostgreSQL 고정 | local SQLite 고정 / prod `--db postgres`(기본)·`mysql`·`mariadb`·`sqlite` |
+| DB | local SQLite / 그 외 PostgreSQL 고정 | local SQLite 기본(`--local-db` 예외) / prod `--db postgres`(기본)·`mysql`·`mariadb`·`sqlite` |
+| 다중 서비스 | — | **통합관리 repo(`workspace`)** + 서브 repo(`--workspace`) — release.sh·배포 시험·DEPLOY-PROD-GUIDE·README 생성 (2.1) |
 | 리뷰·시험·UI·구현 루프 | 전부 자체 구현 | 결함·보안·E2E·UI·반복 엔진은 **공식 기능에 위임**, 고유 부분만 유지 |
 
 ## 2. 스킬 구성 (백서 5.4 판정 반영)
@@ -45,7 +46,17 @@ PRD(기획 문서 PDF·Markdown 여러 개도 가능)만 있으면 **스택·DB 
 ```
 호출: `/wise-vibe:wds-prd`, `/wise-vibe:wds-scaffold` … (SessionStart 훅 포함)
 
-### 모든 도구 — 설치 스크립트 (도구를 파라미터로 전달)
+### 간편 설치 — 한 줄 (2.1)
+```bash
+curl -fsSL https://raw.githubusercontent.com/WisemanLim/wise-vibe-plugin/main/install.sh | bash                          # 설치된 도구 감지 → 사용자 전역
+curl -fsSL https://raw.githubusercontent.com/WisemanLim/wise-vibe-plugin/main/install.sh | bash -s -- --tool claude,codex  # 도구 지정 (project: 현재 디렉터리)
+curl -fsSL https://raw.githubusercontent.com/WisemanLim/wise-vibe-plugin/main/install.sh | bash -s -- --list               # 감지 결과·스킬 목록만
+```
+- 저장소가 비공개면 `raw.githubusercontent.com` 이 404 를 준다 → `gh api -H "Accept: application/vnd.github.raw" repos/WisemanLim/wise-vibe-plugin/contents/install.sh | bash -s -- [옵션]` (본체도 `gh api` 로 받음).
+- `--tool` 을 생략하면 감지(`~/.claude`·`~/.cursor`·`~/.gemini`·`~/.copilot`·`~/.codex` 또는 실행 파일) + `--scope user`, 지정하면 기존과 같이 project 범위가 기본.
+- `--ref <tag>`(버전 고정) · `--source <checkout>`(로컬 원본) · `--plugin`(Claude Code 마켓플레이스 명령 출력). 잘린 다운로드는 실행되지 않는다(전체 `{ … }` 가드).
+
+### 모든 도구 — 설치 스크립트 (체크아웃에서 도구를 파라미터로 전달)
 ```bash
 git clone https://github.com/WisemanLim/wise-vibe-plugin.git
 cd your-project
@@ -109,7 +120,7 @@ wds-prd → wds-recommend → wds-scaffold → wds-implement      (선택: wds-t
 
 | 모드 | compose | env | DB | 이미지 |
 |------|---------|-----|----|--------|
-| local | `docker-compose.yml` + `docker-compose.local.yml` | `.env.local` (커밋) | SQLite | `dev` (바인드·핫리로드) |
+| local | `docker-compose.yml` + `docker-compose.local.yml` | `.env.local` (커밋) | SQLite (`--local-db <db>` 시 같은 RDBMS, `compose/db.yml`) | `dev` (바인드·핫리로드) |
 | prod | `docker-compose.yml` + `docker-compose.prod.yml` | `.env.prod` (비커밋, CHANGE_ME) | `--db` (기본 postgres) | `runtime` |
 
 ```
@@ -117,7 +128,19 @@ make preflight · make local-all · make test · make db-ping · make prod-all �
 make <local|prod>-{all,build,logs,stop,restart,ps} · make db-{ping,shell,migrate,seed,reset,fresh} [ENV=]
 ```
 프로파일: `python-fastapi` · `node-next-nest` · `go-gin` · `rust-axum` · `java-spring` · `csharp-dotnet` · `cpp-cmake` · `bio-rag-research`(PostgreSQL+pgvector 고정)
-· 모바일 `ios-swiftui` · `android-compose` · `flutter-app` · `react-native-app` (compose 없이 local/prod 빌드 플레이버).
+· 웹 `react-spa`(Vite + nginx 정적 SPA, DB 없음) · 모바일 `ios-swiftui` · `android-compose` · `flutter-app` · `react-native-app` (compose 없이 local/prod 빌드 플레이버).
+
+**다중 서비스 — 통합관리 repo + 서브 repo** (2.1)
+```bash
+S=plugins/wise-vibe/skills/wds-scaffold/scripts/scaffold.sh
+bash $S workspace --name app --services app-api:api:8280:db,app-web:web:8290 --target .     # root: 서브 repo 미추적
+bash $S go-gin --db postgres --local-db postgres --workspace app --name app-api --target app-api
+bash $S react-spa --workspace app --name app-web --target app-web
+make test && release/release.sh up --env dev --yes                                          # 배포 회귀 → 로컬 리허설
+```
+root 생성물: `Makefile` · `README.md`/`README.en.md` · `DEPLOY-PROD-GUIDE.md` · `release/{release.sh,services.tsv,deploy.env.example}` ·
+`scripts/{prod-secrets,secret-scan}.sh` · `test/deploy/`(배포 시험만) · `docs/TEST-OWNERSHIP.md` · CI(gitleaks + make test) · `.gitignore`(서브 repo 제외).
+`release.sh`: `doctor · build(멀티아키 tar.gz+sha256) · up · deploy(ssh, 이미지 스트리밍, releases/<V>+current+shared 비밀) · status · down · rollback`, 종료 코드 0/2/4/5/8.
 
 ### 4-4. 구현·시험·리뷰
 - `/wds-implement` — 계획표 확인 1회 → Epic 루프(공식 반복 엔진 우선) → `test/impl/<Nth>/` → README(한/영) 현행화.
@@ -128,7 +151,7 @@ make <local|prod>-{all,build,logs,stop,restart,ps} · make db-{ping,shell,migrat
 
 ```
 wise-vibe-plugin/
-├── install.sh                         # 설치 진입점 (--tool …)
+├── install.sh                         # 간편 설치 (curl | bash, 감지·다운로드) → 도구별 설치기
 ├── Makefile                           # make validate | test | test-docker
 ├── .claude-plugin/marketplace.json    # Claude Code (+Copilot)
 ├── .cursor-plugin/marketplace.json    # Cursor
@@ -159,5 +182,6 @@ Docker 실기동 검증(2026-10-01, Docker 29.8 / Compose 5.5) 결과는 [docs/M
   Codex 마켓플레이스(`.agents/plugins/marketplace.json`)는 넣지 않았습니다 — Codex 는 `install.sh --tool codex` 를 사용하세요.
 - node·go·rust·cpp·csharp 템플릿의 `/health` 는 DB 설정만 보고하며 실제 DB 질의는 python·java 만 합니다(`make db-ping ENV=prod` 는 모든 프로파일에서 DB 컨테이너 헬스로 확인).
 - 모바일 템플릿은 SDK 가 필요해 이 저장소의 자동 시험 대상이 아닙니다(생성물 구조만 검증).
+- `workspace` 의 `deploy --host`·`rollback`·`--install-deps`·멀티아키 `build` 는 대상 서버가 필요해 자동 시험 밖입니다(`up`/`status`/`down` 은 로컬 리허설로 검증).
 
 라이선스: 내부 사용.

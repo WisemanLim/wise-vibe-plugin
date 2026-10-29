@@ -1,0 +1,16 @@
+# {{PROJECT_NAME}} — 공통 정의 (make local-all | make prod-all). DB 없음 — 데이터는 API 경유.
+services:
+  web:
+    build: { context: ., dockerfile: Dockerfile, target: runtime }
+    image: {{PROJECT_NAME}}-web:${APP_ENV:-local}
+    ports: ["${BIND_HOST:-127.0.0.1}:${WEB_PORT:-{{APP_PORT}}}:8080"]
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:?API_UPSTREAM 필요 / required}
+    # local 에서 호스트의 API 에 닿기 위한 별칭 (Linux 는 host-gateway 필요)
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz >/dev/null || wget -qO- http://127.0.0.1:8080/ >/dev/null"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 30s

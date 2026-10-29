@@ -11,3 +11,5 @@ ios-swiftui	mobile	ios-swiftui	-	swift	-	-	-	iOS · Swift · SwiftUI
 android-compose	mobile	android-compose	-	android	-	-	-	Android · Kotlin · Jetpack Compose
 flutter-app	mobile	flutter-app	-	flutter	-	-	-	Flutter (Dart, iOS + Android)
 react-native-app	mobile	react-native-app	-	react-native node	-	-	-	React Native (Expo, TypeScript)
+react-spa	web	react-spa	node	node	web	8090	-	Node 24 · pnpm · React 19 · Vite 8 · TypeScript · Tailwind 4 (정적 SPA + nginx, DB 없음)
+workspace	workspace	workspace	-	workspace	-	-	-	통합관리 root repo — release.sh(doctor·build·up·deploy·rollback) · 비밀 init · 배포 시험 (서브 repo 미추적)

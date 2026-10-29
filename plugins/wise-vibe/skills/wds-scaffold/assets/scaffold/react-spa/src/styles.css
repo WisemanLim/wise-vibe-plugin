@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/* 디자인 토큰 — PRD 디자인 요구에 맞춰 교체한다. 색은 의미로만 쓰고 텍스트를 병기한다. */
+:root {
+  --primary: #3f51e5;
+  --primary-soft: #eef0fd;
+  --navy: #1f3864;
+  --ok: #2f9e44;
+  --warn: #e8a317;
+  --danger: #c92a2a;
+  --muted: #868e96;
+  --focus: 2px solid #3f51e5;
+  --nav-width: 224px;
+  --top-height: 56px;
+  --drawer-width: 420px;
+  /* 폰트는 로컬 번들 권장(에어갭) — 미확정 시 시스템 폰트 폴백 */
+  --font-sans: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+  --font-mono: Menlo, ui-monospace, monospace;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+:focus-visible {
+  outline: var(--focus);
+  outline-offset: 2px;
+}

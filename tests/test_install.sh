@@ -30,5 +30,17 @@ t "uninstall: 관리 블록 제거·사용자 내용 보존" "! grep -q wise-vib
 mkdir -p "${OUT}/home"; HOME="${OUT}/home" /bin/bash "${I}" --tool all --scope user >/dev/null 2>&1
 for d in .claude/skills .cursor/skills .gemini/config/skills .copilot/skills .agents/skills; do t "user ${d}" "[ -d '${OUT}/home/${d}/wds-prd' ]"; done
 t "잘못된 --tool 거부" "! /bin/bash '${I}' --tool vim >/dev/null 2>&1"
+# 간편 설치(bootstrap): --tool 생략 = 감지 + user scope, --list, --source, 잘림 방지 가드
+mkdir -p "${OUT}/h2/.claude" "${OUT}/h2/.codex"
+# PATH 제한: 호스트에 설치된 도구(cursor·claude 바이너리)가 감지 결과를 바꾸지 않게
+HOME="${OUT}/h2" PATH=/usr/bin:/bin /bin/bash "${I}" >/dev/null 2>&1
+t "감지 설치: claude user" "[ -d '${OUT}/h2/.claude/skills/wds-scaffold' ]"
+t "감지 설치: codex user(.agents)" "[ -d '${OUT}/h2/.agents/skills/wds-scaffold' ]"
+t "감지 설치: 미감지 cursor 미설치" "[ ! -d '${OUT}/h2/.cursor/skills' ]"
+t "--list 출력" "HOME='${OUT}/h2' PATH=/usr/bin:/bin /bin/bash '${I}' --list | grep '^  \* claude' >/dev/null"
+t "--plugin 안내" "/bin/bash '${I}' --plugin | grep 'plugin install wise-vibe@wise-vibe' >/dev/null"
+t "--source 체크아웃 사용" "/bin/bash '${I}' --source '${ROOT}' --tool codex --target '${OUT}/src' >/dev/null 2>&1 && [ -d '${OUT}/src/.agents/skills/wds-prd' ]"
+t "--source 잘못된 경로 거부" "! /bin/bash '${I}' --source /nonexistent --list >/dev/null 2>&1"
+t "잘린 다운로드는 실행 안 됨" "! head -c 1500 '${I}' | HOME='${OUT}/h3' bash >/dev/null 2>&1 && [ ! -e '${OUT}/h3' ]"
 echo "install checks=${n} fail=${fail}"
 [ "${fail}" -eq 0 ]

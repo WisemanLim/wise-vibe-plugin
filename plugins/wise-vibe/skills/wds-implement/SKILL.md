@@ -55,7 +55,7 @@ allowed-tools: Read Glob Grep Write Edit Bash
 1. **구현** — 프로파일 스택 그대로. 기존 스타일 유지, 표면적 최소 변경.
    DB 스키마 변경은 마이그레이션 추가 → `make db-migrate`(local) — 프로파일의 `MIGRATE` 가 TODO echo 면 이 Epic 에서 도구를 설정
    (python=alembic, node=Prisma/Drizzle, go=goose/atlas, rust=sqlx-cli, java=Flyway, c#=EF Core migrations).
-   local(SQLite)·prod(`DB_ENGINE`) **양쪽에서 동작**하는 SQL/ORM 만 사용(엔진 전용 문법은 분기 또는 회피).
+   local(SQLite 또는 `--local-db` RDBMS)·prod(`DB_ENGINE`) **양쪽에서 동작**하는 SQL/ORM 만 사용(엔진 전용 문법은 분기 또는 회피).
 2. **시험** — **wds-test** §3 사이클을 새 차수에(`next-iteration.sh`, Epic 1개 = 차수 1개).
    `scenario.md`(수용 기준) → `make test` + 기능 실행(curl/CLI/화면 — 브라우저는 wds-test §4 위임) → `logs/` → `result.md`.
 3. **실패** — 원인 분석 → 수정 → **같은 차수**에서 재시험(회차 누적). 한도 초과면 `BLOCKED` + 필요한 결정을 기록하고 다음 Epic.

@@ -1,0 +1,8 @@
+# gitleaks config — integration repo (docs, deployment scripts, release)
+[extend]
+useDefault = true
+
+[allowlist]
+description = "templates and placeholders, never real secrets"
+paths = ['''(^|/)\.env\.example$''', '''(^|/)release/deploy\.env\.example$''']
+regexes = ['''CHANGE_ME''', '''local-only-not-secret''']

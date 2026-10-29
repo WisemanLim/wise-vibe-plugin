@@ -31,6 +31,7 @@ test/
 - 새 차수: `bash SKILL_DIR/scripts/next-iteration.sh [root] [--chunks K]` (마지막 줄 = 생성 경로).
 - 언어별 유닛 테스트도 `test/` 하위(`tests/` 금지). 예외: RN `__tests__/`, iOS `AppTests/`, Android `app/src/test`, Go/Rust in-package.
 - `test/**/logs/` 는 비커밋(.gitignore).
+- 통합관리 repo(`wds-scaffold workspace`)는 예외: `test/deploy/` 에 **배포 시험만**(스크립트 문법·소스 아카이브·비밀 init·리허설) 두고 `test/impl/` 을 만들지 않는다. 기능 시험·결과는 각 서브 repo `test/` 가 소유한다.
 
 ## 2. 시험 영역
 

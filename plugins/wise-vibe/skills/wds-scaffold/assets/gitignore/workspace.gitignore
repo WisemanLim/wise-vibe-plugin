@@ -1,0 +1,24 @@
+# ===== workspace secrets — never commit (release.sh source_tarball excludes them again) =====
+*.pass
+.secrets/
+release/deploy.env
+release/*.env
+!release/*.env.example
+
+# ===== workspace release artefacts =====
+release/dist/
+release/.state/
+*.tar
+*.tar.gz
+*.tar.gpg
+
+# ===== workspace PRD inputs / extraction (wds-prd) =====
+.wds/
+# PRD 입력 원문(PDF 등)을 커밋하지 않으려면 다음 줄 주석 해제 (gitignore 는 줄 끝 주석을 지원하지 않음)
+# .docs/
+test/**/logs/
+!test/**/logs/.gitkeep
+
+# ===== workspace deploy test caches (python3 회귀 시험) =====
+__pycache__/
+*.pyc

@@ -2,15 +2,16 @@
 name: wds-scaffold
 description: >
   확정된 스택 프로파일로 프로젝트 골격을 결정적으로 생성한다(구 env-init 포함). 실행은 docker compose 전용이고
-  모드는 local(SQLite)·prod(--db postgres 기본|mysql|mariadb|sqlite) 두 가지다. Dockerfile(dev/runtime),
+  모드는 local(SQLite 기본, --local-db 로 RDBMS)·prod(--db postgres 기본|mysql|mariadb|sqlite) 두 가지다. Dockerfile(dev/runtime),
   compose 3종, Makefile, .env.local/.env.prod, CI, test/ 골격, README(한/영)을 만들고 업종 지정 시
-  COMPLIANCE.md 를 쓴다. "스캐폴딩", "프로젝트 구조 생성", "보일러플레이트", "scaffold" 요청 시 사용.
+  COMPLIANCE.md 를 쓴다. 다중 서비스는 workspace(통합관리 root repo: release.sh·배포 시험·DEPLOY-PROD-GUIDE·README)와
+  서브 repo(--workspace)로 만든다. "스캐폴딩", "프로젝트 구조 생성", "보일러플레이트", "통합관리 repo", "scaffold" 요청 시 사용.
 license: Internal
 compatibility: Claude Code · Cursor 2.4+ · Antigravity 2.0+ · GitHub Copilot · Codex. bash 3.2+ 와 perl 필요. 생성물 실행에는 Docker + Compose v2.
 metadata:
   version: "2.0.0"
   source: "github.com/WisemanLim/pub-wise-dev-std (project-scaffolder + /scaffold + /env-init 통합)"
-argument-hint: "<profile-id>|custom [--db postgres|mysql|mariadb|sqlite] [--extras redis,kafka] [--domain <id>] [--name N] [--target DIR]"
+argument-hint: "<profile-id>|workspace|custom [--db postgres|mysql|mariadb|sqlite] [--local-db sqlite|<db>] [--workspace WS] [--services repo:api|web:port[:db],...] [--extras redis,kafka] [--domain <id>] [--name N] [--target DIR]"
 disable-model-invocation: true
 allowed-tools: Read Glob Grep Write Edit Bash
 ---
@@ -26,10 +27,14 @@ allowed-tools: Read Glob Grep Write Edit Bash
 | 항목 | 규칙 |
 |------|------|
 | 실행 | **docker compose 전용**. 호스트 프로세스 매니저(PM2·honcho·goreman·overmind) 없음 |
-| 모드 | **local** = SQLite 고정 · dev 스테이지 · 소스 바인드 / **prod** = `--db` RDBMS · runtime 스테이지 |
+| 모드 | **local** = SQLite 기본 · dev 스테이지 · 소스 바인드 / **prod** = `--db` RDBMS · runtime 스테이지 |
+| local RDBMS | `--local-db <prod 와 같은 엔진>` — SQLite 로 검증할 수 없는 시험(RLS 테넌트 격리 등)이 있을 때만. `compose/db.yml`(두 모드 공통) + `.env.local` 고정 local 전용 비밀번호(db 포트 미게시) |
+| kind | `service`(서버) · `web`(`react-spa`: 정적 SPA + nginx, DB 없음) · `mobile` · `workspace`(통합관리 root repo) |
+| workspace | `workspace --services <repo>:<api\|web>:<host-port>[:db],... --name <ws>` → `release/{release.sh,services.tsv,deploy.env.example}` · `scripts/{prod-secrets,secret-scan}.sh` · `test/deploy/` · `Makefile` · `README*` · `DEPLOY-PROD-GUIDE.md` · `docs/TEST-OWNERSHIP.md` · CI · `.gitignore`(서브 repo 제외 섹션 첫머리) |
+| 서브 repo | `--workspace <ws>` → `docker-compose.workspace.yml`(prod 에만 포함: 공유 네트워크 `<ws>-net`·별칭 `<repo>-<svc>`·`<SVC>_IMAGE` 배포 태그) + Makefile `prod-net` |
 | prod DB | `postgres`(기본) · `mysql` · `mariadb` · `sqlite` — compose `db` 서비스 + 헬스체크 + `dbdata` 볼륨 |
 | env | `.env.local`(시크릿 없음·커밋) · `.env.prod`(CHANGE_ME placeholder·비커밋) · `.env.example`(커밋) |
-| Make | `<mode>-all/-build/-logs/-stop/-restart/-ps`, `test`, `shell`, `db-ping/-shell/-migrate/-seed/-reset/-fresh [ENV=]`, `deploy`, `preflight`, `help` |
+| Make | `<mode>-all/-build/-logs/-stop/-restart/-ps`, `test`, `shell`, `db-ping/-shell/-migrate/-seed/-reset/-fresh [ENV=]`, `deploy`, `preflight`, `prod-net`, `help` (web: `build-web`, db-* 없음) — `assets/common/base.mk` + `db.mk`\|`web.mk` |
 | 추가 인프라 | `--extras redis,memcached,kafka,rabbitmq,mongodb` → `compose/*.yml` (두 모드 자동 포함) |
 | 시험 | `test/README.md`, `test/dev-env/scenario.md`, `test/impl/` (wds-test 표준) |
 
@@ -46,7 +51,15 @@ allowed-tools: Read Glob Grep Write Edit Bash
    - `.gitignore` 는 섹션 헤더(`# ===== … =====`) 기준으로 **누락 섹션만** 추가한다.
 4. **업종(`--domain`) 지정 시** `COMPLIANCE.md` 를 작성한다(§3). 스크립트가 아니라 이 단계에서 YAML 근거로 쓴다.
 5. **bio-rag-research** 이면 `SECURITY.md`(출처 병기·ACL·비식별·감사로그·재현성·하이브리드 검색) 를 함께 쓴다.
-6. **보고** — 스크립트 요약(written/kept/unchanged)과 다음 명령:
+6. **다중 서비스(통합관리 repo)** — root 를 먼저 만들고 서브 repo 를 같은 이름으로 그 아래에 만든다:
+   ```bash
+   bash "SKILL_DIR/scripts/scaffold.sh" workspace --name app --services app-api:api:8280:db,app-web:web:8290 --target .
+   bash "SKILL_DIR/scripts/scaffold.sh" go-gin --db postgres --workspace app --name app-api --target app-api
+   bash "SKILL_DIR/scripts/scaffold.sh" react-spa --workspace app --name app-web --target app-web
+   ```
+   서브 repo 는 각자 `git init`(root 는 `.gitignore` 로 추적하지 않음). 게시 포트는 `release/services.tsv` 가 정본(`release.sh up` 이 `.env.prod` 에 반영).
+   web 의 prod `API_UPSTREAM` 은 `CHANGE_ME` 로 생성된다 — 공유 네트워크의 **고유 별칭** `http://<api-repo>-api:<port>` 를 넣는다(서비스 이름 `api` 는 repo 간 충돌).
+7. **보고** — 스크립트 요약(written/kept/unchanged)과 다음 명령:
    `make preflight` → `make local-all` → `curl …/health` → `make test` → (선택) `make prod-all` → **wds-test** dev-env 검증.
 
 ## 3. COMPLIANCE.md (업종 오버레이)
@@ -83,6 +96,8 @@ API 가 필요하면 서버 프로파일을 별도 디렉터리(예: `apps/api`)
 | java-spring | gradle bootRun (바인드) | gradle test | `/health` 가 실제 `SELECT 1` (SQLite 방언 포함) |
 | node-next-nest | nest --watch + next dev (서비스 2개) | vitest | 설정만(ORM 은 implement) |
 | go-gin / rust-axum / cpp-cmake | go run / cargo run / CMake Debug | go test / cargo test / ctest | 설정만 |
+| react-spa (web) | Vite dev server (바인드) | vitest + tsc | DB 없음 — `/api` 를 `API_UPSTREAM` 으로 프록시, API 는 `GET /api/v1/health` 제공 권장 |
+| workspace | `release/release.sh up --env dev --yes` | `make test` (bash -n + 배포 회귀 python) | 서브 repo 별 |
 | csharp-dotnet | dotnet watch | xUnit | 설정만(EF Core 프로바이더 패키지 포함) |
 
 "설정만" 프로파일도 `make db-ping ENV=prod` 는 DB 컨테이너 헬스로 연결 가능 여부를 확인한다.
@@ -92,6 +107,7 @@ API 가 필요하면 서버 프로파일을 별도 디렉터리(예: `apps/api`)
 
 새 서버 프로파일 = `assets/profiles.tsv` 1행 + `assets/scaffold/<id>/`(Dockerfile `dev`/`runtime` 스테이지,
 `docker-compose.yml`·`.local.yml`·`.prod.yml`, `wds.mk`) + `../wds-recommend/references/profiles/<id>.yaml`.
+Makefile 은 `<헤더 변수> + wds.mk + assets/common/base.mk + db.mk`(service) 또는 `+ web.mk`(web) 로 조립된다.
 토큰: `{{PROJECT_NAME}} {{DB_ENGINE}} {{DB_DEPS}} {{DB_SERVICE}} {{DB_DEPENDS_ON}} {{DB_VOLUMES}} {{PROFILE_ID}} {{PROFILE_TITLE}} {{APP_PORT}}`.
 
 ## 7. 안전 규칙

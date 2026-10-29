@@ -1,0 +1,8 @@
+# {{PROJECT_NAME}} — prod 모드: runtime 스테이지(nginx 비root) + 읽기 전용 FS
+services:
+  web:
+    env_file: [".env.prod"]
+    restart: unless-stopped
+    read_only: true
+    # 읽기 전용 루트의 쓰기 경로: nginx pid/temp(/tmp) 와 envsubst 가 렌더하는 설정(conf.d). 101 = nginx-unprivileged 사용자
+    tmpfs: ["/tmp", "/etc/nginx/conf.d:uid=101,gid=101,mode=0755"]

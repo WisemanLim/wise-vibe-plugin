@@ -68,7 +68,7 @@ for r in reg:
     if yaml and os.path.isfile(y):
         env = yaml.safe_load(open(y, encoding="utf8")).get("environments", {})
         check(set(env) == {"local", "prod"}, f"{r[0]}: environments 키 {sorted(env)} != [local, prod]")
-    if r[1] == "service":
+    if r[1] in ("service", "web"):
         t = os.path.join(P, "skills", "wds-scaffold", "assets", "scaffold", r[2])
         for need in ("Dockerfile", "docker-compose.yml", "docker-compose.local.yml", "docker-compose.prod.yml", "wds.mk"):
             check(os.path.isfile(os.path.join(t, need)), f"{r[0]}: {need} 없음")

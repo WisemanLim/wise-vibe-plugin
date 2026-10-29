@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.1.0 — 2026-10-29
+
+### 추가
+- **`workspace` 프로파일** (kind `workspace`): 통합관리 root repo 를 결정적으로 생성 — `Makefile` · `README.md`/`README.en.md` · `DEPLOY-PROD-GUIDE.md` ·
+  `release/{release.sh,services.tsv,deploy.env.example}` · `scripts/{prod-secrets,secret-scan}.sh` · `test/deploy/`(배포 시험만: 소스 아카이브·비밀 init 회귀) ·
+  `docs/TEST-OWNERSHIP.md` · CI(gitleaks + make test) · `.gitleaks.toml` · `.gitignore`(서브 repo 제외 섹션 첫머리).
+  `scaffold.sh workspace --services <repo>:<api|web>:<host-port>[:db],... --name <ws>`. 서비스 목록 정본은 `release/services.tsv`.
+- `release.sh`: doctor · build(멀티아키 tar.gz+sha256) · up · deploy(ssh, 이미지 스트리밍, releases/<V> + current + shared 비밀) · status · down · rollback, 종료 코드 0/2/4/5/8.
+- **`--workspace <ws>`** (서비스·웹): prod 전용 `docker-compose.workspace.yml`(공유 네트워크 `<ws>-net`, 별칭 `<repo>-<svc>`, `<SVC>_IMAGE` 배포 태그) + Makefile `prod-net`.
+- **`--local-db <db>`**: local 도 prod 와 같은 RDBMS (`compose/db.yml` 두 모드 공통, local 전용 고정 비밀번호, `db-reset` 은 스키마 재생성). RLS·테넌트 격리 시험용 예외.
+- **`react-spa` 프로파일** (kind `web`): Vite + React + TypeScript + Tailwind, dev = Vite / runtime = 비root nginx(읽기 전용 FS, conf.d tmpfs, 보안 헤더, `/api` 프록시).
+- **간편 설치**: `curl -fsSL …/install.sh | bash` — 잘림 방지 가드, 소스 다운로드(codeload → gh api → git clone), 도구 감지(`--tool` 생략 시 user scope), `--list`·`--ref`·`--source`·`--plugin`.
+
+### 변경
+- `assets/common/server.mk` → `base.mk`(수명주기·시험·배포·prod-net) + `db.mk`(DB 타겟) + `web.mk`. db-ping/db-shell/db-reset 은 모드별 엔진(`LOCAL_DB`/`DB_ENGINE`)을 따른다.
+- 모든 서비스 템플릿 healthcheck 에 `start_period: 30s` (느린 첫 기동을 실패로 판정하지 않음).
+
+### 수정 (EvidenceMesh 리허설에서 발견)
+- 명령 치환 안의 `die` 가 서브셸만 종료해 잘못된 `--services` 가 exit 0 이 되던 문제 → 목록을 메인 셸에서 1회 해석.
+- nginx 읽기 전용 FS 에서 envsubst 설정 렌더 실패 → `conf.d` tmpfs(uid 101).
+- 공유 네트워크에서 서비스 이름 `api` 가 repo 간 충돌 → web prod `API_UPSTREAM` 은 `CHANGE_ME` 로 생성해 고유 별칭을 명시하게 함.
+
 ## 2.0.0 — 2026-10-01 (wise-vibe 최초 릴리스, pub-wise-dev-std 1.2.0 기반)
 
 ### 변경 (Breaking)

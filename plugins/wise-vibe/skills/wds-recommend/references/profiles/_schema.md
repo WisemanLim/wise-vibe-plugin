@@ -56,7 +56,7 @@ run_methods:                      # docker compose 전용 (호스트 프로세�
     prod: "make prod-all"
 
 environments:                     # 모드 2종: local / prod
-  local: { db: sqlite, compose: "docker-compose.yml + docker-compose.local.yml", notes: "SQLite 고정" }
+  local: { db: sqlite, compose: "docker-compose.yml + docker-compose.local.yml", notes: "SQLite 기본 (--local-db 로 prod 와 같은 RDBMS 가능)" }
   prod:  { db: postgres, db_options: [postgres, mysql, mariadb, sqlite], compose: "docker-compose.yml + docker-compose.prod.yml" }
 
 scaffold:                         # 생성할 디렉터리 트리 (상대경로)

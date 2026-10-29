@@ -13,7 +13,7 @@
 | 5 | 업종(KSIC) | 없음 · finance · healthcare · commerce · logistics · manufacturing · govtech · edtech · media-gaming · ict-saas · agriculture · energy-utilities · construction · hospitality → `--domain` (COMPLIANCE.md) |
 | 6 | 프로젝트 이름 | 기본: 대상 디렉터리명 → `--name` |
 
-모드는 고정이다: **local = SQLite**, **prod = 3단계 DB**. 실행은 docker compose 전용(호스트 프로세스 매니저 없음).
+모드는 고정이다: **local = SQLite**(기본, RLS 등 검증이 필요하면 `--local-db <3단계 DB>`), **prod = 3단계 DB**. 실행은 docker compose 전용(호스트 프로세스 매니저 없음).
 MongoDB 는 RDBMS 대체가 아니라 `--extras mongodb` 로 추가된다(앱 연결 코드는 implement 단계).
 
 ## 결정 요약 (실행 전 출력)

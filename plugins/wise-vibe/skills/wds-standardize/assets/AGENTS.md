@@ -17,7 +17,8 @@
 - 진입점은 Makefile: `make <mode>-all|-build|-logs|-stop|-restart|-ps` (mode = local|prod), `make test`, `make db-ping|db-migrate|db-seed [ENV=]`, `make preflight`, `make deploy`.
 - 호스트 프로세스 매니저(PM2·honcho·goreman·overmind·forever)를 쓰지 않는다. 프로세스가 늘면 compose 서비스로 추가한다.
 - dev/staging 같은 추가 모드를 만들지 않는다. 새 env 키는 `.env.local`·`.env.prod`(CHANGE_ME)·`.env.example` 세 곳에 함께 추가한다.
-- 코드·SQL 은 local(SQLite)과 prod(`DB_ENGINE`) 양쪽에서 동작해야 한다.
+- 코드·SQL 은 local(SQLite 또는 `--local-db` RDBMS)과 prod(`DB_ENGINE`) 양쪽에서 동작해야 한다.
+- 통합관리 repo(workspace)는 배포·배포 시험만 소유하고, 기능 시험·결과는 각 서브 repo `test/` 가 소유한다.
 
 ## 언어·패키지 매니저
 우선순위 Node/TS · Python · Rust · Go · C/C++ (+ Java/C# 프로파일). Python=uv, Node=pnpm, Go=modules, Rust=cargo. yarn/bun 은 승인제.

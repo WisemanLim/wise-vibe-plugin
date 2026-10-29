@@ -2,7 +2,8 @@
 name: wds-recommend
 description: >
   PRD.md 와 기본 선택(언어·FE/BE·팀 규모·업종 KSIC)으로 언어·패키지매니저·프레임워크·prod DB·실행방식을
-  추천한다. 실행은 docker compose 전용, 모드는 local(SQLite)/prod(PostgreSQL 기본·MySQL·MariaDB·SQLite).
+  추천한다. 실행은 docker compose 전용, 모드는 local(SQLite 기본, 필요 시 --local-db)/prod(PostgreSQL 기본·MySQL·MariaDB·SQLite).
+  서비스가 여러 repo 면 workspace(통합관리 root) + 서브 repo(--workspace), SSR 없는 콘솔은 react-spa 를 함께 추천.
   업종(KSIC 대분류) 입력 시 규제·데이터등급 오버레이 반영. "스택 추천", "어떤 언어/프레임워크",
   "기술스택 결정", "DB 선택", "stack recommendation" 요청 시 사용. 추천 확정 후 wds-scaffold 로 이어진다.
 license: Internal
@@ -137,7 +138,7 @@ PRD/요청이 **모바일 앱**(iOS/Android/앱/스토어/푸시/오프라인 �
 
 | 모드 | DB | compose | 이미지 스테이지 | 핵심 |
 |---|---|---|---|---|
-| local | **SQLite 고정** | `docker-compose.yml` + `docker-compose.local.yml` + `.env.local` | `dev` | 소스 바인드·핫리로드, 외부 의존 0 |
+| local | **SQLite 기본** (`--local-db <db>` 예외: RLS·테넌트 격리 등 SQLite 로 검증 불가한 시험) | `docker-compose.yml` + `docker-compose.local.yml` + `.env.local` (+ `compose/db.yml`) | `dev` | 소스 바인드·핫리로드 |
 | prod | **`--db`**: postgres(기본) · mysql · mariadb · sqlite | `docker-compose.yml` + `docker-compose.prod.yml` + `.env.prod` | `runtime` | RDBMS 컨테이너 + 헬스체크, 시크릿은 주입 |
 
 prod DB 선택 규칙:
@@ -159,7 +160,8 @@ prod DB 선택 규칙:
 
 - Frontend: Next.js(App Router) + React + TS + Tailwind, Vitest+Playwright, Storybook
 - Backend: NestJS / FastAPI / Gin / Axum, ORM=Prisma/SQLAlchemy/GORM/SQLx
-- DB: local=SQLite, prod=PostgreSQL(기본)/MySQL/MariaDB/SQLite, 선택 Redis(`--extras`), 벡터=PGVector, 그래프=Neo4j
+- DB: local=SQLite(기본, `--local-db` 예외), prod=PostgreSQL(기본)/MySQL/MariaDB/SQLite, 선택 Redis(`--extras`), 벡터=PGVector, 그래프=Neo4j
+- 다중 repo: `workspace` 프로파일(통합관리 root — release.sh·배포 시험·DEPLOY-PROD-GUIDE) + 각 서브 repo `--workspace <ws>`. 웹 콘솔(SSR 불필요) = `react-spa`
 - Ops: GitHub Actions(`make preflight` → `make test` → prod 이미지 빌드), Docker Compose(local/prod), (확장) K8s+Helm, SonarQube+Sentry
 - App: Flutter/React Native + Fastlane + Firebase, 데스크톱=Tauri(Rust)
 

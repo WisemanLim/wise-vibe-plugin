@@ -1,0 +1,62 @@
+id: react-spa
+title: "React SPA (Vite + TypeScript, nginx 런타임)"
+status: stable
+kind: web                          # 정적 SPA — DB 없음, /api 는 API_UPSTREAM 으로 프록시
+summary: >
+  SSR 이 필요 없는 업무 콘솔·관리 화면. Vite dev server(local) / 비root nginx 정적 서빙(prod).
+  모든 데이터는 별도 API 서비스(go-gin·python-fastapi 등)를 거친다 — 화면 전용 업무 로직 금지.
+when_to_use:
+  - "API 와 분리된 업무 콘솔·관리자 화면 (SSR·SEO 불필요)"
+  - "에어갭·정적 배포·선택 데스크톱(Tauri) 래핑이 필요할 때"
+  - "백엔드가 Go/Python 이고 프론트만 TypeScript 일 때 (언어 2개 유지)"
+avoid_when:
+  - "SSR·SEO·서버 컴포넌트가 필요 → node-next-nest"
+  - "프론트와 BFF 를 TypeScript 로 통일 → node-next-nest"
+
+languages:
+  primary: node
+  also: [typescript]
+
+package_managers:
+  default: pnpm
+  allowed: [pnpm, npm]
+  notes: "pnpm-lock.yaml 커밋 → Dockerfile 이 --frozen-lockfile 로 재현 설치"
+
+layers:
+  frontend:
+    framework: "React + Vite"
+    ui: "TypeScript + Tailwind CSS"
+    test: "Vitest + Testing Library, Playwright(E2E)"
+  backend: null
+  database: null
+  ops:
+    ci: "GitHub Actions"
+    container: "Docker (dev = Vite, runtime = nginx-unprivileged, 읽기 전용 FS)"
+    deploy: "docker compose prod 모드 (make deploy) 또는 workspace release.sh"
+  app: null
+
+run_methods:
+  container:
+    local: "make local-all   # Vite dev server + 소스 바인드 (dev 스테이지)"
+    prod: "make prod-all     # nginx 정적 서빙 + /api 프록시 (runtime 스테이지)"
+
+environments:
+  local: { db: none, compose: "docker-compose.yml + docker-compose.local.yml", notes: "Vite HMR · API_UPSTREAM = 호스트의 API" }
+  prod:  { db: none, compose: "docker-compose.yml + docker-compose.prod.yml", notes: "nginx 비root · CSP 등 보안 헤더 · API_UPSTREAM = 공유 네트워크 별칭 또는 외부 URL" }
+
+scaffold:
+  template: "react-spa"
+
+testing:
+  framework: "Vitest + Testing Library (+ Playwright E2E)"
+  dir: "test/"
+  dev_env: "test/dev-env/"
+  impl: "test/impl/<Nth>/"
+  cycle: "시나리오→진행→오류시 수정·재시험→결과작성 / scenario→run→fix&retest→result"
+
+makefile_targets:                 # 생성 Makefile = assets/common/base.mk + web.mk
+  mode_family: "<mode>-all | -build | -logs | -stop | -restart | -ps  (mode = local | prod)"
+  common: "preflight | test | build-web | shell | deploy | help"
+
+references:
+  - "검증: EvidenceMesh console (2026-10-29 local dev 리허설 — nginx 읽기 전용 FS 의 conf.d tmpfs 필요)"
