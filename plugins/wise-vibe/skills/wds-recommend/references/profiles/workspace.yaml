@@ -32,7 +32,7 @@ layers:
 
 run_methods:
   container:
-    local: "release/release.sh up --env dev --yes   # 이 머신에서 서브 프로젝트 prod 모드 리허설"
+    local: "release/release.sh up --yes   # 이 머신에서 서브 프로젝트 prod 모드 리허설"
     prod: "release/release.sh deploy --env prod --host user@server"
 
 environments:

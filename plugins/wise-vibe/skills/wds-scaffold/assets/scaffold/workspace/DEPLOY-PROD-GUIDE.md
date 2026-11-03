@@ -9,7 +9,7 @@
 |---|---|---|
 | `doctor [--remote]` | OS·arch, docker·compose ≥ 2.20·buildx·openssl·make·curl·tar·git, podman shim 거부 | 구현 |
 | `build [--platforms] [--version]` | 서비스별 runtime 이미지 → `release/dist/<svc>-<V>-<arch>.tar.gz` + `.sha256` | 구현 |
-| `up [--env dev\|prod] [--version] [--rebuild]` | 비밀 init → 이미지 → prod compose 기동 → (DB 있는 서비스) `db-migrate ENV=prod` → healthcheck | 구현 |
+| `up [--version] [--rebuild]` | 비밀 init → 이미지 → prod compose 기동 → (DB 있는 서비스) `db-migrate ENV=prod` → (Makefile 에 있으면) `post-up` → healthcheck | 구현 |
 | `deploy --host … [--env] [--build-on local\|remote] [--install-deps]` | ssh → OS/arch → 소스(git 가시 파일만) 전송 → 이미지 스트리밍 또는 원격 빌드 → 서버 `up` → `current` 전환 | 구현 |
 | `status` / `down` `[--remote]` | 컨테이너·비밀 지문 / 중지(볼륨·비밀 유지) | 구현 |
 | `rollback --to V --remote` | `current` 를 이전 릴리스로 전환 후 재기동. **DB 마이그레이션은 되돌리지 않음** | 구현 |
@@ -33,14 +33,12 @@
 ```bash
 # 1) 작업 PC — 사전 점검과 배포 시험
 make test && make secret-scan && make doctor
-# 2) local 리허설 (prod 모드 그대로)
-release/release.sh up --env dev --yes --version 0.1.0-dev
+# 2) local 리허설 — 이 머신에서 prod 모드 그대로 (환경은 local · prod 두 가지)
+release/release.sh up --yes --version 0.1.0-rc1
 release/release.sh status
-# 3) dev 서버 배포 (키 인증 ssh)
+# 3) prod 배포 (키 인증 ssh) — 리허설에서 확인한 같은 소스·버전
 cp release/deploy.env.example release/deploy.env   # REMOTE_HOST 등 편집 (비밀 없음)
-release/release.sh deploy --env dev --version 0.1.0
-# 4) prod 배포 — dev 에서 확인한 같은 버전
-release/release.sh deploy --env prod --host <user@prod-server> --version 0.1.0
+release/release.sh deploy --host <user@prod-server> --version 0.1.0
 ```
 
 ## 4. 서브 프로젝트 · 노출 범위

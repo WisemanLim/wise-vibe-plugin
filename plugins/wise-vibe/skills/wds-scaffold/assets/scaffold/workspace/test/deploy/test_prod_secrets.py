@@ -22,6 +22,7 @@ DB_USER=app
 DB_PASSWORD=CHANGE_ME
 DATABASE_URL=postgresql+psycopg://app:CHANGE_ME@db:5432/app
 AUTH_KEY=secret://file/run/secrets/auth_key
+IDP_ADMIN_PASSWORD=CHANGE_ME
 '''
 
 TSV = '# repo\tshort\tcomponent\timage_var\thas_db\thost_port\nws-worker\tworker\tapi\tAPI_IMAGE\t1\t8281\n'
@@ -44,22 +45,26 @@ with tempfile.TemporaryDirectory(prefix='ws-secrets-test-') as temp:
     svc.mkdir()
     (svc / '.env.example').write_text(template)
 
-    first = run(fixture, 'init', 'worker', '--env', 'dev')
+    assert run(fixture, 'init', 'worker', '--env', 'dev', check=False).returncode == 2, '--env dev must be rejected (no dev environment)'
+    first = run(fixture, 'init', 'worker')
     envf = svc / '.env.prod'
     password = env_value(envf, 'DB_PASSWORD')
     assert re.fullmatch(r'[0-9a-f]{48}', password), 'password not generated'
     assert password not in first.stdout + first.stderr, 'password printed'
     assert env_value(envf, 'DATABASE_URL') == f'postgresql+psycopg://app:{password}@db:5432/app'
-    assert env_value(envf, 'APP_ENV') == 'dev'
+    assert env_value(envf, 'APP_ENV') == 'prod'
+    idp = env_value(envf, 'IDP_ADMIN_PASSWORD')
+    assert re.fullmatch(r'[0-9a-f]{64}', idp) and idp not in first.stdout, 'other *_PASSWORD placeholder not generated'
     assert stat.S_IMODE(envf.stat().st_mode) == 0o600
     secret = svc / '.secrets/auth_key'
     assert stat.S_IMODE(secret.stat().st_mode) == 0o440
     assert secret.read_text().strip() not in first.stdout
 
-    (svc / '.env.example').write_text(template + 'NEW_KEY=1\n')
+    (svc / '.env.example').write_text(template + 'NEW_KEY=1\nS3_BUCKET=b1\n')  # keys with digits too
     run(fixture, 'init', 'worker')
     assert env_value(envf, 'DB_PASSWORD') == password, 're-run changed the password'
     assert env_value(envf, 'NEW_KEY') == '1', 'new template key not added'
+    assert env_value(envf, 'S3_BUCKET') == 'b1', 'new template key with a digit not added'
 
     status = run(fixture, 'status', 'worker')
     assert 'consistent' in status.stdout and password not in status.stdout

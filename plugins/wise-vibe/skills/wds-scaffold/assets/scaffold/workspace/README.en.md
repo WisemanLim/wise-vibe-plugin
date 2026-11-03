@@ -31,7 +31,7 @@ DEPLOY-PROD-GUIDE.md         production deployment procedure
 ```bash
 make test                                   # deployment script regression tests (no Docker needed)
 make doctor                                 # prerequisites on this machine
-release/release.sh up --env dev --yes       # start every sub project in prod compose mode on this machine
+release/release.sh up --yes                 # start every sub project in prod compose mode on this machine (environments: local, prod)
 release/release.sh status
 release/release.sh down                     # volumes and secrets kept
 ```

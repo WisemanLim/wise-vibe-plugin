@@ -78,9 +78,11 @@ for pk in go-gin:api node-next-nest:api react-spa:web; do
   p="${pk%%:*}"; d="${OUT}/${p}-ws"
   /bin/bash "${SC}" "${p}" --workspace demo --target "${d}" >/dev/null 2>&1 && ok || { bad "${p} --workspace 생성 실패"; continue; }
   f="${d}/docker-compose.workspace.yml"
-  grep -q 'name: demo-net, external: true' "${f}" && ok || bad "${p} --workspace: 네트워크"
+  grep -qF 'name: "${WORKSPACE_NET:-demo-net}", external: true' "${f}" && ok || bad "${p} --workspace: 네트워크"
   grep -q 'API_IMAGE\|WEB_IMAGE' "${f}" && ok || bad "${p} --workspace: 이미지 변수"
   grep -q '^WORKSPACE_NET := demo-net' "${d}/Makefile" && ok || bad "${p} --workspace: Makefile WORKSPACE_NET"
+  grep -qF 'WORKSPACE_NET := demo-net$(INSTANCE)' "${d}/Makefile" && grep -q '^INSTANCE ?=' "${d}/Makefile" && ok || bad "${p} --workspace: Makefile INSTANCE"
+  grep -qF -- '-prod$(INSTANCE) -f' "${d}/Makefile" && ok || bad "${p} --workspace: DC_prod INSTANCE"
   grep -q '{{' "${f}" && bad "${p} --workspace: 미치환 토큰" || ok
   if [ "${compose}" = true ]; then
     (cd "${d}" && make -s -n prod-ps 2>/dev/null | grep -q 'docker-compose.workspace.yml') && ok || bad "${p} --workspace: prod 에 오버레이 미포함"

@@ -31,7 +31,7 @@ DEPLOY-PROD-GUIDE.md         운영 배포 절차
 ```bash
 make test                                   # 배포 스크립트 회귀 시험 (Docker 불필요)
 make doctor                                 # 이 머신 사전 점검
-release/release.sh up --env dev --yes       # 이 머신에서 모든 서브 프로젝트를 prod 모드로 기동
+release/release.sh up --yes                 # 이 머신에서 모든 서브 프로젝트를 prod 모드로 기동 (환경 = local · prod)
 release/release.sh status
 release/release.sh down                     # 볼륨·비밀 유지
 ```

@@ -1,6 +1,10 @@
 # ===== workspace secrets — never commit (release.sh source_tarball excludes them again) =====
 *.pass
 .secrets/
+# backup bundles and their passphrases (scripts/prod-backup.sh)
+.backups/
+*.passphrase
+*.tar.gpg
 release/deploy.env
 release/*.env
 !release/*.env.example
@@ -22,3 +26,5 @@ test/**/logs/
 # ===== workspace deploy test caches (python3 회귀 시험) =====
 __pycache__/
 *.pyc
+# isolated install rehearsals: a full copy with its own .env.prod/.secrets
+.rehearsal/

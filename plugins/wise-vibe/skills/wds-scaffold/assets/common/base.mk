@@ -9,7 +9,7 @@ SVC   ?=
 EXTRA_FILES := $(foreach f,$(sort $(wildcard compose/*.yml)),-f $(f))
 DC_local := docker compose -p $(PROJECT)-local -f docker-compose.yml -f docker-compose.local.yml $(EXTRA_FILES) --env-file .env.local
 WS_FILE  := $(if $(wildcard docker-compose.workspace.yml),-f docker-compose.workspace.yml)
-DC_prod  := docker compose -p $(PROJECT)-prod  -f docker-compose.yml -f docker-compose.prod.yml  $(EXTRA_FILES) $(WS_FILE) --env-file .env.prod
+DC_prod  := WORKSPACE_NET=$(WORKSPACE_NET) docker compose -p $(PROJECT)-prod$(INSTANCE) -f docker-compose.yml -f docker-compose.prod.yml  $(EXTRA_FILES) $(WS_FILE) --env-file .env.prod
 DC = $(DC_$(ENV))
 
 .PHONY: help preflight test shell deploy prod-net \

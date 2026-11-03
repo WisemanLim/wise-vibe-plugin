@@ -1,5 +1,7 @@
 # {{PROJECT_NAME}} — React SPA (multi-stage: dev = local 모드, runtime = prod 모드)
 FROM node:24-alpine AS base
+# CI=true: non-interactive pnpm (no TTY prompt to purge an outdated node_modules volume)
+ENV CI=true
 RUN npm install -g pnpm@11.3.0
 WORKDIR /app
 
@@ -10,7 +12,8 @@ COPY package.json pnpm-lock.yaml* ./
 RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi
 COPY . .
 EXPOSE 8080
-CMD ["pnpm", "dev"]
+# the node_modules volume outlives image rebuilds → re-sync it with the lockfile on every start
+CMD ["sh", "-c", "pnpm install --frozen-lockfile && pnpm dev"]
 
 FROM dev AS build
 RUN pnpm build

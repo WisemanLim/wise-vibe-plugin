@@ -240,7 +240,9 @@ ConnectionStrings__Default=${prod_url}" ;;
     printf 'DB_SHELL    := %s\n' "${db_shell}"
     printf 'DB_RESET    := %s\n' "${db_reset}"
     if [ "${local_db}" = "sqlite" ]; then echo "TEST_DEPS   := --no-deps"; else echo "TEST_DEPS   :="; fi
-    echo "WORKSPACE_NET := ${workspace:+${workspace}-net}"
+    echo "# INSTANCE: suffix for a second prod install on the same host (isolated install rehearsal, e.g. INSTANCE=-m1)"
+    echo "INSTANCE ?="
+    echo "WORKSPACE_NET := ${workspace:+${workspace}-net\$(INSTANCE)}"
     echo "PREFLIGHT_NOTE := (DB local=${local_db}, prod=${db}${workspace:+, workspace=${workspace}})"
     echo
     cat "${ASSETS}/common/base.mk"
@@ -282,6 +284,9 @@ obj/
 .venv/
 __pycache__/
 .review/
+# secrets never enter an image build context (prod-secrets.sh files, OpenBao state)
+.secrets/
+secrets.*
 EOF
   mkdir -p "${stage}/.github/workflows"
   cp "${ASSETS}/common/ci/service.yml" "${stage}/.github/workflows/ci.yml"
@@ -309,7 +314,7 @@ write_workspace_overlay() {  # --workspace: prod 전용 공유 네트워크 + �
       echo "      wsnet: { aliases: [{{PROJECT_NAME}}-${s}] }"
     done
     echo "networks:"
-    echo "  wsnet: { name: ${workspace}-net, external: true }"
+    echo "  wsnet: { name: \"\${WORKSPACE_NET:-${workspace}-net}\", external: true }"
   } > "${stage}/docker-compose.workspace.yml"
 }
 
@@ -336,7 +341,9 @@ write_web_files() {  # kind=web: 정적 SPA — DB 없음, /api 는 API_UPSTREAM
     cat "${stage}/wds.mk"
     echo "DB_ENGINE   :="
     echo "TEST_DEPS   := --no-deps"
-    echo "WORKSPACE_NET := ${workspace:+${workspace}-net}"
+    echo "# INSTANCE: suffix for a second prod install on the same host (isolated install rehearsal, e.g. INSTANCE=-m1)"
+    echo "INSTANCE ?="
+    echo "WORKSPACE_NET := ${workspace:+${workspace}-net\$(INSTANCE)}"
     echo "PREFLIGHT_NOTE := (web${workspace:+, workspace=${workspace}})"
     echo
     cat "${ASSETS}/common/base.mk"
@@ -481,7 +488,7 @@ if [ "${kind}" = "service" ]; then
 elif [ "${kind}" = "web" ]; then
   echo "next: make preflight → make local-all → open http://127.0.0.1:${app_port} → make test"
 elif [ "${kind}" = "workspace" ]; then
-  echo "next: 서브 프로젝트를 각자 git repo 로 배치 → make test (배포 회귀) → make doctor → release/release.sh up --env dev --yes"
+  echo "next: 서브 프로젝트를 각자 git repo 로 배치 → make test (배포 회귀) → make doctor → release/release.sh up --yes"
   echo "      서브 repo 는 --workspace ${name} 로 scaffold 해야 공유 네트워크·이미지 태그가 맞는다"
 else
   echo "next: make setup → make local-all (시뮬레이터/에뮬레이터) → make test"

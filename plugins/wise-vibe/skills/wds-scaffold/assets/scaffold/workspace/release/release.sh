@@ -2,26 +2,28 @@
 # release.sh — build, start and deploy {{PROJECT_NAME}} (sub projects listed in release/services.tsv).
 #
 # Platforms: macOS (local rehearsal, Docker Desktop) · Linux servers, Debian/Ubuntu and RHEL family.
-# Images: linux/amd64 and linux/arm64. Environments: dev | prod (both run the sub repos' prod compose mode).
+# Images: linux/amd64 and linux/arm64. Environment: prod only (sub repos' prod compose mode; local = each repo's make local-all).
 #
 #   release/release.sh doctor   [--remote]                 check prerequisites (local or remote server)
 #   release/release.sh build    [--platforms linux/amd64,linux/arm64] [--version V]
 #                                                          multi-arch images → release/dist/*.tar.gz + .sha256
-#   release/release.sh up       [--env dev|prod] [--version V] [--rebuild]
+#   release/release.sh up       [--version V] [--rebuild]
 #                                                          THIS machine: secrets → image → prod compose → migrate → health
-#   release/release.sh deploy   --host user@server [--env dev|prod] [--version V] [ssh options]
+#   release/release.sh deploy   --host user@server [--version V] [ssh options]
 #                                                          REMOTE server over ssh: ship source + image, run `up` there
 #   release/release.sh status   [--remote]                 containers, health, secret status (fingerprints only)
 #   release/release.sh down     [--remote]                 stop containers (volumes and secrets kept)
 #   release/release.sh rollback --to VERSION --remote      switch `current` to an earlier release and restart
 #
 # Options (CLI > release/deploy.env > interactive prompt > default; --yes = no prompts):
-#   --services <short|repo>,...  (default: all rows of release/services.tsv)   --env dev|prod   --version V   --rebuild   --yes
+#   --services <short|repo>,...  (default: all rows of release/services.tsv)   --version V   --rebuild   --yes
 # SSH options:
 #   --host user@server  --ssh-port 22  --ssh-key ~/.ssh/id_ed25519  --remote-dir /opt/{{PROJECT_NAME}}
 #   --build-on local|remote   (local: build for the server's arch here and stream the image; remote: build there)
 #   --install-deps            install Docker Engine/Compose/openssl/gnupg/make/git on the server (apt or dnf, sudo)
 #
+# INSTANCE=-<name> (env): a second, isolated prod install on the same host (own compose projects, volumes, network) —
+#   e.g. a clean-install rehearsal from a copy of the source tree with its own services.tsv ports.
 # Exit codes: 0 ok · 2 argument/config · 4 connection · 5 verification failed · 8 unsupported (stable for automation).
 # Secrets are never typed by a person: scripts/prod-secrets.sh generates them on the target and prints fingerprints.
 set -euo pipefail
@@ -30,7 +32,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SERVICES_TSV="$ROOT/release/services.tsv"   # repo  short  component  image_var  has_db  host_port (scaffold --services)
 [ -f "$SERVICES_TSV" ] || { echo "ERROR: $SERVICES_TSV missing" >&2; exit 2; }
 ALL_SERVICES="$(awk -F'\t' '!/^#/ && NF {print $1}' "$SERVICES_TSV" | tr '\n' ' ')"
-NETWORK="{{PROJECT_NAME}}-net"
+INSTANCE="${INSTANCE:-}"; export INSTANCE   # read by the sub repo Makefiles (compose project / network suffix)
+case "$INSTANCE" in ""|-[a-z0-9]*) ;; *) echo "ERROR: INSTANCE must look like -m1" >&2; exit 2 ;; esac
+NETWORK="{{PROJECT_NAME}}-net$INSTANCE"
 IMAGE_NS="{{PROJECT_NAME}}"
 MIN_COMPOSE="2.20.0"
 DIST="$ROOT/release/dist"
@@ -42,16 +46,16 @@ warn() { echo "WARN: $*" >&2; }
 q() { printf '%q' "$1"; }  # shell-quote for remote command lines
 
 # ---------------------------------------------------------------- options
-CMD="${1:-}"; [ -n "$CMD" ] && shift || { sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
+CMD="${1:-}"; [ -n "$CMD" ] && shift || { sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 [ -f "$ROOT/release/deploy.env" ] && . "$ROOT/release/deploy.env"   # KEY=VALUE defaults (gitignored, no secrets)
 SERVICES="${SERVICES:-all}"; VERSION="${VERSION:-}"; PLATFORMS="${PLATFORMS:-}"
-TARGET_ENV="${TARGET_ENV:-}"; REMOTE_HOST="${REMOTE_HOST:-}"; SSH_PORT="${SSH_PORT:-22}"; SSH_KEY="${SSH_KEY:-}"
+REMOTE_HOST="${REMOTE_HOST:-}"; SSH_PORT="${SSH_PORT:-22}"; SSH_KEY="${SSH_KEY:-}"
 REMOTE_DIR="${REMOTE_DIR:-/opt/{{PROJECT_NAME}}}"; BUILD_ON="${BUILD_ON:-local}"; INSTALL_DEPS="${INSTALL_DEPS:-0}"
 YES="${YES:-0}"; REMOTE=0; TO=""; IMAGE_READY=0; REBUILD=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --services) SERVICES="$2"; shift ;; --version) VERSION="$2"; shift ;; --platforms) PLATFORMS="$2"; shift ;;
-    --env) TARGET_ENV="$2"; shift ;;
+    --env) die "--env was removed: there is no dev environment — release.sh always deploys prod" ;;
     --host) REMOTE_HOST="$2"; shift ;; --ssh-port) SSH_PORT="$2"; shift ;; --ssh-key) SSH_KEY="$2"; shift ;;
     --remote-dir) REMOTE_DIR="$2"; shift ;; --build-on) BUILD_ON="$2"; shift ;; --install-deps) INSTALL_DEPS=1 ;;
     --remote) REMOTE=1 ;; --to) TO="$2"; shift ;; --yes|-y) YES=1 ;; --rebuild) REBUILD=1 ;;
@@ -186,24 +190,22 @@ wait_health() {  # wait_health <svc> — every container of the compose project 
   # successful probe, so only the deadline (HEALTH_TIMEOUT seconds) decides failure.
   local svc="$1" i states
   for i in $(seq 1 "$(( ${HEALTH_TIMEOUT:-180} / 3 ))"); do
-    states="$(docker compose -p "$svc-prod" ps --format '{{.Health}}' 2>/dev/null | sort -u | tr '\n' ' ')"
+    states="$(docker compose -p "$svc-prod$INSTANCE" ps --format '{{.Health}}' 2>/dev/null | sort -u | tr '\n' ' ')"
     [ "$states" = "healthy " ] && { info "$svc healthy"; return 0; }
     sleep 3
   done
-  docker compose -p "$svc-prod" ps >&2 || true
+  docker compose -p "$svc-prod$INSTANCE" ps >&2 || true
   fail 5 "$svc not healthy (states: ${states:-none}) — make -C $svc prod-logs"
 }
 cmd_up() {
-  ask TARGET_ENV "Target environment (dev|prod)" prod
-  case "$TARGET_ENV" in dev|prod) ;; *) die "--env must be dev or prod" ;; esac
   [ -n "$VERSION" ] || VERSION="$(default_version)"
   doctor_local
   docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NETWORK" >/dev/null
   local svc img var
   for svc in $SELECTED; do
     [ -d "$ROOT/$svc" ] || fail 2 "$svc checkout missing under $ROOT (separate git repo — clone it next to release/)"
-    info "secrets/config for $svc ($TARGET_ENV)"
-    "$ROOT/scripts/prod-secrets.sh" init "$svc" --env "$TARGET_ENV"
+    info "secrets/config for $svc"
+    "$ROOT/scripts/prod-secrets.sh" init "$svc"
     img="$(image_name "$svc"):$VERSION"; var="$(image_var "$svc")"
     if [ "$IMAGE_READY" = 1 ]; then
       docker image inspect "$img" >/dev/null 2>&1 || fail 5 "image $img not loaded"
@@ -215,15 +217,19 @@ cmd_up() {
     # published host port comes from release/services.tsv (one table for every environment)
     set_env_key "$ROOT/$svc/.env.prod" "$(echo "$(component "$svc")" | tr 'a-z' 'A-Z')_PORT" "$(svc_field "$svc" 6)"
     ( cd "$ROOT/$svc" && make -s prod-all )
-    if has_db "$svc"; then ( cd "$ROOT/$svc" && make -s db-migrate ENV=prod ); fi   # explicit — never automatic in prod
+    if has_db "$svc"; then
+      ( cd "$ROOT/$svc" && make -s db-migrate ENV=prod )   # explicit — never automatic in prod (no seed: initial data = make db-bootstrap)
+    fi
+    # optional per-service step after start (e.g. object store bucket setup): a `post-up` target in the sub repo Makefile
+    if make -C "$ROOT/$svc" -n post-up >/dev/null 2>&1; then ( cd "$ROOT/$svc" && make -s post-up ENV=prod ); fi
     wait_health "$svc"
   done
-  info "up OK: $TARGET_ENV $VERSION"
+  info "up OK: prod $VERSION"
 }
 cmd_status() {
   local svc
   for svc in $SELECTED; do
-    echo "--- $svc"; docker compose -p "$svc-prod" ps 2>/dev/null || echo "(not running)"
+    echo "--- $svc"; docker compose -p "$svc-prod$INSTANCE" ps 2>/dev/null || echo "(not running)"
     "$ROOT/scripts/prod-secrets.sh" status "$svc" || true
   done
 }
@@ -254,7 +260,7 @@ source_tarball() {  # tracked + untracked-not-ignored files of the root and sub 
     ( cd "$ROOT/$svc" && git ls-files -z -co --exclude-standard | tr '\0' '\n' | sed "s#^#$svc/#" | tr '\n' '\0' ) >> "$list"
   done
   # defence in depth: never ship env/secret material even if an ignore rule regresses
-  tr '\0' '\n' < "$list" | grep -vE '(^|/)\.env\.prod|(^|/)\.secrets/|\.pass$|\.tar\.gpg$|(^|/)deploy\.env$|(^|/)\.state/|(^|/)node_modules/' \
+  tr '\0' '\n' < "$list" | grep -vE '(^|/)\.env\.prod|(^|/)\.secrets/|\.pass$|\.passphrase$|(^|/)\.backups/|(^|/)\.rehearsal/|\.tar\.gpg$|(^|/)deploy\.env$|(^|/)\.state/|(^|/)node_modules/' \
     | tr '\n' '\0' | while IFS= read -r -d '' path; do
       # Deleted-but-tracked entries (moves before commit) are skipped: archive current files only.
       if [ -f "$ROOT/$path" ]; then printf '%s\0' "$path"; fi
@@ -270,12 +276,11 @@ source_tarball() {  # tracked + untracked-not-ignored files of the root and sub 
 
 cmd_deploy() {
   ssh_setup
-  ask TARGET_ENV "Target environment (dev|prod)" prod
   local ros rarch rel base svc img
   ros="$(rsh 'uname -s; uname -m' | tr '\n' ' ')"
   case "$ros" in Linux*) ;; *) fail 8 "remote must be Linux (got: $ros)" ;; esac
   rarch="$(echo "$ros" | awk '{print $NF}')"; case "$rarch" in x86_64|amd64) rarch=amd64 ;; aarch64|arm64) rarch=arm64 ;; *) fail 8 "unsupported arch $rarch" ;; esac
-  info "remote: $ros→ linux/$rarch, env=$TARGET_ENV"
+  info "remote: $ros→ linux/$rarch"
   [ -n "$VERSION" ] || VERSION="$(default_version)"
   base="$REMOTE_DIR"; rel="$base/releases/$VERSION"
 
@@ -307,9 +312,9 @@ cmd_deploy() {
     extra="--image-ready"
   fi
   info "start on server"
-  rsh "cd $(q "$rel") && bash release/release.sh up --yes --env $(q "$TARGET_ENV") --version $(q "$VERSION") --services $(q "$SERVICES") $extra"
+  rsh "cd $(q "$rel") && bash release/release.sh up --yes --version $(q "$VERSION") --services $(q "$SERVICES") $extra"
   rsh "ln -sfn releases/$(q "$VERSION") $(q "$base")/current"
-  info "deploy OK: $REMOTE_HOST $TARGET_ENV $VERSION (current → releases/$VERSION)"
+  info "deploy OK: $REMOTE_HOST prod $VERSION (current → releases/$VERSION)"
 }
 remote_current() { rsh "cd $(q "$REMOTE_DIR")/current && bash release/release.sh $1 --yes --services $(q "$SERVICES") $2"; }
 cmd_rollback() {
@@ -319,7 +324,7 @@ cmd_rollback() {
   rsh "[ -d $(q "$REMOTE_DIR")/releases/$(q "$TO") ]" || fail 5 "release $TO not found on server"
   info "switch current → releases/$TO (DB migrations are NOT reverted — irreversible changes need a restore)"
   rsh "ln -sfn releases/$(q "$TO") $(q "$REMOTE_DIR")/current"
-  remote_current up "--image-ready --version $(q "$TO") --env $(q "${TARGET_ENV:-prod}")"
+  remote_current up "--image-ready --version $(q "$TO")"
 }
 
 # ---------------------------------------------------------------- dispatch

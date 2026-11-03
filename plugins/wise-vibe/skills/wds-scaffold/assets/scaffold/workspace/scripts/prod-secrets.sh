@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # prod-secrets.sh — create and inspect a sub project's .env.prod / .secrets/ on the TARGET machine.
 #
-#   scripts/prod-secrets.sh init   <svc> [--env dev|prod]   create missing values only (re-run keeps existing ones)
+#   scripts/prod-secrets.sh init   <svc>                    create missing values only (re-run keeps existing ones)
 #   scripts/prod-secrets.sh status <svc>                    permissions, fingerprints, CHANGE_ME / consistency
 #
 # <svc> = repo or short name from release/services.tsv
@@ -27,9 +27,8 @@ TSV="$ROOT/release/services.tsv"
 REPO="$(awk -F'\t' -v s="$SVC" '!/^#/ && ($1==s || $2==s) {print $1; exit}' "$TSV")"
 [ -n "$REPO" ] || die "unknown service: $SVC (release/services.tsv)"
 SVC="$REPO"
-TARGET_ENV=prod
-while [ $# -gt 0 ]; do case "$1" in --env) TARGET_ENV="$2"; shift ;; *) die "unknown option: $1" ;; esac; shift; done
-case "$TARGET_ENV" in dev|prod) ;; *) die "--env must be dev or prod" ;; esac
+# there is no dev environment: .env.prod is always APP_ENV=prod (local = .env.local in each sub repo)
+while [ $# -gt 0 ]; do case "$1" in --env) die "--env was removed: APP_ENV is always prod" ;; *) die "unknown option: $1" ;; esac; shift; done
 
 DIR="$ROOT/$SVC"; ENVF="$DIR/.env.prod"; SECRETS="$DIR/.secrets"
 [ -d "$DIR" ] || die "$SVC checkout missing: $DIR"
@@ -54,10 +53,10 @@ cmd_init() {
   if [ -L "$SECRETS" ] && [ ! -d "$SECRETS" ]; then mkdir -p "$(cd "$DIR" && cd "$(dirname "$(readlink .secrets)")" && pwd)/$(basename "$(readlink "$SECRETS")")"; fi
   # keys added to the template since the last init are appended with their template value
   local k
-  for k in $(grep -E '^[A-Z_]+=' "$DIR/.env.example" | cut -d= -f1); do
+  for k in $(grep -E '^[A-Z0-9_]+=' "$DIR/.env.example" | cut -d= -f1); do
     grep -q "^$k=" "$ENVF" || { set_key "$ENVF" "$k" "$(get_key "$DIR/.env.example" "$k")"; echo "added missing key $k"; }
   done
-  set_key "$ENVF" APP_ENV "$TARGET_ENV"
+  set_key "$ENVF" APP_ENV prod
   if grep -q '^DB_PASSWORD=' "$ENVF"; then
     if [ "$(get_key "$ENVF" DB_PASSWORD)" = CHANGE_ME ]; then
       local pw; pw="$(openssl rand -hex 24)"   # hex: no URL encoding / shell quoting issues
@@ -65,6 +64,11 @@ cmd_init() {
     fi
     set_key "$ENVF" DATABASE_URL "$(rebuild_url)"
   fi
+  # any other *_PASSWORD / *_SECRET / *_TOKEN placeholder (e.g. an IdP admin password) is generated the same way —
+  # 64 hex characters (32 bytes), the format S3-compatible stores such as Garage require for secrets and tokens
+  for k in $(grep -E '^[A-Z0-9_]*(PASSWORD|SECRET|TOKEN)=CHANGE_ME$' "$ENVF" | cut -d= -f1); do
+    local v; v="$(openssl rand -hex 32)"; set_key "$ENVF" "$k" "$v"; echo "$k generated (fp $(fp "$v"))"
+  done
   # secret://file/run/secrets/<name> references → one generated file per name under .secrets/
   local name
   for name in $(grep -oE 'secret://file/run/secrets/[A-Za-z0-9_.-]+' "$ENVF" | sed 's#.*/##' | sort -u); do
@@ -76,7 +80,7 @@ cmd_init() {
   done
   chmod 600 "$ENVF"
   if grep -vE '^\s*#' "$ENVF" | grep -q CHANGE_ME; then echo "FAIL: CHANGE_ME left in .env.prod" >&2; exit 5; fi
-  echo "OK: no CHANGE_ME left ($SVC, APP_ENV=$TARGET_ENV)"
+  echo "OK: no CHANGE_ME left ($SVC, APP_ENV=prod)"
 }
 
 cmd_status() {

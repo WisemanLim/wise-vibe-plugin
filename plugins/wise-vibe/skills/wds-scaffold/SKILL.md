@@ -97,7 +97,7 @@ API 가 필요하면 서버 프로파일을 별도 디렉터리(예: `apps/api`)
 | node-next-nest | nest --watch + next dev (서비스 2개) | vitest | 설정만(ORM 은 implement) |
 | go-gin / rust-axum / cpp-cmake | go run / cargo run / CMake Debug | go test / cargo test / ctest | 설정만 |
 | react-spa (web) | Vite dev server (바인드) | vitest + tsc | DB 없음 — `/api` 를 `API_UPSTREAM` 으로 프록시, API 는 `GET /api/v1/health` 제공 권장 |
-| workspace | `release/release.sh up --env dev --yes` | `make test` (bash -n + 배포 회귀 python) | 서브 repo 별 |
+| workspace | `release/release.sh up --yes` | `make test` (bash -n + 배포 회귀 python) | 서브 repo 별 |
 | csharp-dotnet | dotnet watch | xUnit | 설정만(EF Core 프로바이더 패키지 포함) |
 
 "설정만" 프로파일도 `make db-ping ENV=prod` 는 DB 컨테이너 헬스로 연결 가능 여부를 확인한다.

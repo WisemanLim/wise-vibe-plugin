@@ -3,6 +3,10 @@ services:
   web:
     build: { target: dev }
     env_file: [".env.local"]
+    environment:
+      # the Vite proxy reaches the API through host.docker.internal (IPv4 + IPv6); Node's happy-eyeballs gives each
+      # family 250 ms and fails the whole connect (AggregateError ETIMEDOUT) under load
+      NODE_OPTIONS: "--dns-result-order=ipv4first --no-network-family-autoselection"
     volumes:
       - ./:/app
       - node_modules:/app/node_modules

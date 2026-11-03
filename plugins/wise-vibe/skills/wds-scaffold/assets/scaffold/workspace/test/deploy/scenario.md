@@ -7,7 +7,7 @@
 | DEP-03 | 비밀 init/status 회귀 | `python3 -I test/deploy/test_prod_secrets.py` | 값 생성·미출력·재실행 보존·신규 키 추가·0440·불일치 exit 5·shared symlink |
 | DEP-04 | root 가 서브 repo 미추적 | `git status --short` | 서브 디렉터리 항목 0 |
 | DEP-05 | 사전 점검 | `release/release.sh doctor` | `doctor OK` |
-| DEP-06 | 로컬 dev 리허설 | `release/release.sh up --env dev --yes --version 0.1.0-dev` | 모든 서비스 healthy, DB 있는 서비스는 migrate 실행 |
+| DEP-06 | 로컬 prod 모드 리허설 | `release/release.sh up --yes --version 0.1.0-rc1` (`--env` 는 없음 — exit 2) | 모든 서비스 healthy, DB 있는 서비스는 migrate 실행 |
 | DEP-07 | 노출 범위 | `docker ps` 포트 확인 | 게시 포트 모두 127.0.0.1, db 포트 미게시 |
 | DEP-08 | 이미지 내부 비밀 없음 | 각 이미지에서 `.env*`·`.secrets` 탐색 | 없음 |
 | DEP-09 | 서비스 간 통신 | web → `/api/...` 프록시 | 공유 네트워크 별칭으로 200 |
